@@ -3,7 +3,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
-const targetUrl = 'http://localhost:8000';
+const targetUrl = 'http://10.42.0.47:8000';
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],

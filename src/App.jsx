@@ -4,23 +4,31 @@ import WindowBar from "./components/WindowBar";
 import MainPanel from "./components/MainPanel";
 import Login from "./pages/login";
 import './App.css'
+import { ToastProvider } from "./components/ToastContext"; // New Toast Provider
+import { useAuthStore } from "./store/useAuthStore";
+// import {BrowserRouter as Router, Route, Routes, BrowserRouter} from "react-router-dom";
 
 export default function App() {
   const [activePanel, setActivePanel] = useState("io-settings");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+  const setUser = useAuthStore((state) => state.setUser);
+  const user = useAuthStore((state) => state.user);
 
   useEffect(() => {
-    // Ask the server if we are logged in
     async function verifySession() {
       try {
         const res = await fetch("/whoami");
         if (res.ok) {
+          const userData = await res.json();
+          setUser(userData);
           setIsAuthenticated(true);
         } else {
+          setUser(null);
           setIsAuthenticated(false);
         }
       } catch (err) {
+        setUser(null);
         setIsAuthenticated(false);
       } finally {
         setLoading(false);
@@ -28,7 +36,13 @@ export default function App() {
     }
 
     verifySession();
-  }, []);
+  }, [setUser]);
+
+  useEffect(() => {
+    if (user?.role === "user" && (activePanel === "database" || activePanel === "admin-settings")) {
+      setActivePanel("io-settings");
+    }
+  }, [user, activePanel]);
 
   // Show a blank screen or spinner while checking
   if (loading) return <div className="min-h-screen bg-[#dfe3ea]" />;
@@ -37,13 +51,35 @@ export default function App() {
     return <Login />;
   }
 
-  return (
-    <>
+return (
+  // <Router>
+  // <Routes>
+  //   <Route path="/user" element={<div>{JSON.stringify(user)}</div>} /> // just print the User variable details
+  // </Routes>
+    // </Router>
+  <ToastProvider>
+  <div className="flex flex-col h-screen overflow-hidden bg-[#dfe3ea]">
+    {/* Top Bar - Fixed height, won't scroll */}
+    <div className="flex-shrink-0">
       <WindowBar />
-      <div className="container">
-        <Sidebar active={activePanel} onSelect={setActivePanel} />
-        <MainPanel panel={activePanel} />
+    </div>
+
+    {/* Body Area - Takes remaining height */}
+    <div className="flex flex-1 overflow-hidden">
+      
+      {/* Sidebar - Fixed width, won't scroll with content */}
+      <div className="flex-shrink-0">
+        <Sidebar active={activePanel} onSelect={setActivePanel} role={user?.role} />
       </div>
-    </>
-  );
+
+      {/* Main Content - THIS is the only part that scrolls */}
+      <main className="flex-1 overflow-y-auto bg-slate-50">
+        <MainPanel panel={activePanel} user={user} />
+      </main>
+
+    </div>
+  </div>
+  </ToastProvider>
+
+);
 }

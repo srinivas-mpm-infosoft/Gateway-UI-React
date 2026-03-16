@@ -2,6 +2,7 @@ html,body {
   margin: 0;
   font-family: Segoe UI, Verdana, Arial, sans-serif;
   background: #eee;
+  overflow: hidden;
 }
 .window-bar {
   height: 28px;
@@ -11,6 +12,7 @@ html,body {
 .container {
   display: flex;
   min-height: 100vh;
+  max-width: none;
 }
 #side-nav {
   width: 210px;
@@ -38,7 +40,6 @@ html,body {
 #main-panel {
   flex: 1;
   padding: 0;
-  background: #eee;
 }
 .panel-header {
   background: #444;
