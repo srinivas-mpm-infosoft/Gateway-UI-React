@@ -3,33 +3,35 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
+const targetUrl = 'http://localhost:8000';
+
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     proxy: {
       // Point to the server root, not the specific endpoint
       '/login': {
-        target: 'http://192.168.0.127:8000',
+        target: targetUrl,
         changeOrigin: true,
       },
       '/logout': {
-        target: 'http://192.168.0.127:8000',
+        target: targetUrl,
         changeOrigin: true,
       },
       '/whoami': {
-        target: 'http://192.168.0.127:8000',
+        target: targetUrl,
         changeOrigin: true,
       },
       '/config': {
-        target: 'http://192.168.0.127:8000',
+        target: targetUrl,
         changeOrigin: true,
       },
       '/reset-password': {
-        target: 'http://192.168.0.127:8000',
+        target: targetUrl,
         changeOrigin: true,
       },
       '/create-user': {
-        target: 'http://192.168.0.127:8000',
+        target: targetUrl,
         changeOrigin: true,
       },
     },
