@@ -1,7 +1,14 @@
-import React from 'react';
+import React from "react";
 
-export default function DBSettings({ prefix, db, role }) {
-  // Fallback defaults if db is undefined
+/**
+ * DBSettings – reusable database settings block.
+ *
+ * Controlled mode (preferred): pass `onChange(field, value)` – inputs use
+ *   checked / value and call onChange on every change.
+ * Uncontrolled mode (legacy): omit `onChange` – inputs use defaultChecked /
+ *   defaultValue and expose html name attributes for FormData reading.
+ */
+export default function DBSettings({ prefix, db, role, onChange }) {
   const currentDb = db || {
     upload_local: true,
     upload_cloud: false,
@@ -10,66 +17,102 @@ export default function DBSettings({ prefix, db, role }) {
   };
 
   const isPrivilegedRole = role === "admin" || role === "superadmin";
+  const controlled = !!onChange;
 
   return (
-    <div style={{ marginTop: '12px', padding: '8px', border: '1px solid #ccc' }}>
+    <div style={{ marginTop: 12, padding: 8, border: "1px solid #ccc" }}>
       <b>Database Settings</b>
-
-      <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginTop: '6px' }}>
-        <label>
-          <input 
-            type="checkbox" 
-            name={`${prefix}_upload_local`}
-            defaultChecked={currentDb.upload_local} 
-          />
+      <div
+        style={{
+          display: "flex",
+          gap: 12,
+          alignItems: "center",
+          marginTop: 6,
+          flexWrap: "wrap",
+        }}
+      >
+        <label style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          {controlled ? (
+            <input
+              type="checkbox"
+              checked={!!currentDb.upload_local}
+              onChange={(e) => onChange("upload_local", e.target.checked)}
+            />
+          ) : (
+            <input
+              type="checkbox"
+              name={`${prefix}_upload_local`}
+              defaultChecked={!!currentDb.upload_local}
+            />
+          )}
           Local DB
         </label>
 
-        <label>
-          <input 
-            type="checkbox" 
-            name={`${prefix}_upload_cloud`}
-            defaultChecked={currentDb.upload_cloud} 
-          />
+        <label style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          {controlled ? (
+            <input
+              type="checkbox"
+              checked={!!currentDb.upload_cloud}
+              onChange={(e) => onChange("upload_cloud", e.target.checked)}
+            />
+          ) : (
+            <input
+              type="checkbox"
+              name={`${prefix}_upload_cloud`}
+              defaultChecked={!!currentDb.upload_cloud}
+            />
+          )}
           Cloud DB
         </label>
 
         {isPrivilegedRole ? (
           <>
-            <label>
+            <label style={{ display: "flex", alignItems: "center", gap: 4 }}>
               <b>Database Name</b>
-              <input 
-                type="text"
-                name={`${prefix}_db_name`}
-                placeholder="Database name"
-                defaultValue={currentDb.db_name || "ifex_demo"}
-                style={{ width: '140px' }}
-              />
+              {controlled ? (
+                <input
+                  type="text"
+                  value={currentDb.db_name || ""}
+                  placeholder="Database name"
+                  onChange={(e) => onChange("db_name", e.target.value)}
+                  style={{ width: 140, marginLeft: 4 }}
+                />
+              ) : (
+                <input
+                  type="text"
+                  name={`${prefix}_db_name`}
+                  placeholder="Database name"
+                  defaultValue={currentDb.db_name || "ifex_demo"}
+                  style={{ width: 140, marginLeft: 4 }}
+                />
+              )}
             </label>
 
-            <label>
+            <label style={{ display: "flex", alignItems: "center", gap: 4 }}>
               <b>Table Name</b>
-              <input 
-                type="text"
-                name={`${prefix}_table_name`}
-                placeholder="Table name"
-                defaultValue={currentDb.table_name || ""}
-                style={{ width: '140px' }}
-              />
+              {controlled ? (
+                <input
+                  type="text"
+                  value={currentDb.table_name || ""}
+                  placeholder="Table name"
+                  onChange={(e) => onChange("table_name", e.target.value)}
+                  style={{ width: 140, marginLeft: 4 }}
+                />
+              ) : (
+                <input
+                  type="text"
+                  name={`${prefix}_table_name`}
+                  placeholder="Table name"
+                  defaultValue={currentDb.table_name || ""}
+                  style={{ width: 140, marginLeft: 4 }}
+                />
+              )}
             </label>
           </>
         ) : (
           <>
-            <input 
-              type="hidden" 
-              name={`${prefix}_db_name`} 
-              value={currentDb.db_name || "ifex_demo"} 
-            />
-            <input 
-              type="hidden" 
-              name={`${prefix}_table_name`} 
-              value={currentDb.table_name || ""} 
-            />
+            <input type="hidden" name={`${prefix}_db_name`} value={currentDb.db_name || "ifex_demo"} readOnly />
+            <input type="hidden" name={`${prefix}_table_name`} value={currentDb.table_name || ""} readOnly />
           </>
         )}
       </div>

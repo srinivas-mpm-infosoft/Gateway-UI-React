@@ -9,7 +9,7 @@ import { useAuthStore } from "./store/useAuthStore";
 // import {BrowserRouter as Router, Route, Routes, BrowserRouter} from "react-router-dom";
 
 export default function App() {
-  const [activePanel, setActivePanel] = useState("io-settings");
+  const [activePanel, setActivePanel] = useState("io-general");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const setUser = useAuthStore((state) => state.setUser);
@@ -40,7 +40,7 @@ export default function App() {
 
   useEffect(() => {
     if (user?.role === "user" && (activePanel === "database" || activePanel === "admin-settings")) {
-      setActivePanel("io-settings");
+      setActivePanel("io-general");
     }
   }, [user, activePanel]);
 
