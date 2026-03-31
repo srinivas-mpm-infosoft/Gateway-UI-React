@@ -44,7 +44,6 @@ export default function RegisterTable({
           <th className={thCls}>Multiply</th>
           <th className={thCls}>Divide</th>
           <th className={thCls}>Process Range</th>
-          <th className={`${thCls} text-center`}>Set Point</th>
           <th className={`${thCls} text-center`}>Read</th>
           <th className={`${thCls} text-center`}>Write</th>
           <th className={`${thCls} text-center`}>Alert</th>
@@ -250,16 +249,7 @@ export default function RegisterTable({
                 </div>
               </td>
 
-              {/* Enable Set Point */}
-              <td className={`${tdCls} text-center`}>
-                <input
-                  type="checkbox"
-                  checked={!!r.enable_setpoint}
-                  disabled={isReadOnly}
-                  onChange={(e) => onRowChange(i, "enable_setpoint", e.target.checked)}
-                  className="h-3.5 w-3.5 rounded border-slate-300 accent-zinc-700 cursor-pointer"
-                />
-              </td>
+ 
 
               {/* Read */}
               <td className={`${tdCls} text-center`}>
@@ -292,7 +282,7 @@ export default function RegisterTable({
                   className={`inline-flex items-center justify-center p-1.5 rounded-md transition-colors ${
                     hasAlert
                       ? "bg-amber-100 text-amber-600 hover:bg-amber-200"
-                      : "text-slate-300 hover:text-amber-500 hover:bg-amber-50"
+                      : "text-slate-700 hover:text-amber-500 hover:bg-amber-50"
                   }`}
                 >
                   <Bell size={13} strokeWidth={hasAlert ? 2.5 : 1.5} />
@@ -305,7 +295,7 @@ export default function RegisterTable({
                   type="button"
                   disabled={isReadOnly}
                   onClick={() => onRemoveRow(i)}
-                  className="inline-flex items-center justify-center p-1.5 rounded-md text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-colors disabled:opacity-30"
+                  className="inline-flex items-center justify-center p-1.5 rounded-md text-red-700 bg-rose-50 transition-colors disabled:opacity-30"
                 >
                   ×
                 </button>

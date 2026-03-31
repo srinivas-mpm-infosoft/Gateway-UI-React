@@ -5,6 +5,8 @@ import tailwindcss from '@tailwindcss/vite'
 
 const targetUrl = 'http://10.42.0.183:8000';
 
+// const targetUrl = 'http://localhost:8000';
+
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {

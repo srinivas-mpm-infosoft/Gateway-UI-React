@@ -17,7 +17,7 @@ export const ToastProvider = ({ children }) => {
       
       {/* Global Toast UI */}
       {toast.show && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] w-full max-w-sm px-4 animate-in slide-in-from-top-10 duration-300">
+        <div className=" fixed top-6 left-1/2 -translate-x-1/2 z-[9999] w-full max-w-sm px-4 animate-in slide-in-from-top-10 duration-300">
           <div className={`flex items-center gap-3 px-5 py-3 rounded-xl shadow-2xl border bg-white ${
             toast.type === "success" ? "border-emerald-100 text-emerald-800" : "border-red-100 text-red-800"
           }`}>
