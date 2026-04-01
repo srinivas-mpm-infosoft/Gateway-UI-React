@@ -548,11 +548,10 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
           <button
             key={t}
             onClick={() => setActiveTopTab(t)}
-            className={`px-5 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
-              activeTopTab === t
+            className={`px-5 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${activeTopTab === t
                 ? "border-zinc-700 text-zinc-800"
                 : "border-transparent text-slate-400 hover:text-slate-600"
-            }`}
+              }`}
           >
             {t}
           </button>
@@ -565,10 +564,10 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
           <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">Global RTU Settings</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: "Baud Rate", key: "baudRate", options: ["300","600","1200","2400","4800","9600","19200","38400","57600","115200","230400"] },
-              { label: "Parity", key: "parity", options: ["Even","Odd","None"] },
-              { label: "Data Bits", key: "dataBits", options: [5,6,7,8], isNum: true },
-              { label: "Stop Bits", key: "stopBits", options: [1,2], isNum: true },
+              { label: "Baud Rate", key: "baudRate", options: ["300", "600", "1200", "2400", "4800", "9600", "19200", "38400", "57600", "115200", "230400"] },
+              { label: "Parity", key: "parity", options: ["Even", "Odd", "None"] },
+              { label: "Data Bits", key: "dataBits", options: [5, 6, 7, 8], isNum: true },
+              { label: "Stop Bits", key: "stopBits", options: [1, 2], isNum: true },
             ].map(({ label, key, options, isNum }) => (
               <label key={key} className="block">
                 <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">{label}</span>
@@ -609,33 +608,30 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
               {devices.order.map((key) => (
                 <div
                   key={key}
-                  className={`group flex items-center gap-0 rounded-lg border overflow-hidden transition-all ${
-                    activeBrandKey === key
+                  className={`group flex items-center gap-0 rounded-lg border overflow-hidden transition-all ${activeBrandKey === key
                       ? "border-zinc-600 shadow-sm"
                       : "border-slate-200 hover:border-slate-300"
-                  }`}
+                    }`}
                 >
                   <button
                     onClick={() => {
                       setActiveBrandKey(key);
                       setActiveSlaveId(devices.brands[key]?.slaves?.[0]?.id ?? null);
                     }}
-                    className={`px-4 py-2 text-sm font-medium transition-colors ${
-                      activeBrandKey === key
+                    className={`px-4 py-2 text-sm font-medium transition-colors ${activeBrandKey === key
                         ? "bg-zinc-800 text-white"
                         : "bg-white text-slate-600 hover:bg-slate-50"
-                    }`}
+                      }`}
                   >
                     {devices.brands[key]?.label || key}
                   </button>
                   <button
                     disabled={isReadOnly}
                     onClick={() => removeBrand(key)}
-                    className={`px-2 py-2 text-sm transition-colors ${
-                      activeBrandKey === key
+                    className={`px-2 py-2 text-sm transition-colors ${activeBrandKey === key
                         ? "bg-zinc-900 text-zinc-400 hover:text-white hover:bg-zinc-700"
                         : "bg-white text-slate-300 hover:text-rose-500 hover:bg-rose-50"
-                    }`}
+                      }`}
                     title="Remove device"
                   >
                     <X size={14} />
@@ -669,17 +665,15 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
                   return (
                     <div
                       key={s.id}
-                      className={`flex items-center rounded-lg border overflow-hidden transition-all ${
-                        isActive
+                      className={`flex items-center rounded-lg border overflow-hidden transition-all ${isActive
                           ? "border-zinc-600 shadow-sm"
                           : "border-slate-200 hover:border-slate-300"
-                      }`}
+                        }`}
                     >
                       <button
                         onClick={() => setActiveSlaveId(s.id)}
-                        className={`px-3 py-1.5 text-sm font-semibold transition-colors ${
-                          isActive ? "bg-zinc-800 text-white" : "bg-white text-slate-600 hover:bg-slate-50"
-                        }`}
+                        className={`px-3 py-1.5 text-sm font-semibold transition-colors ${isActive ? "bg-zinc-800 text-white" : "bg-white text-slate-600 hover:bg-slate-50"
+                          }`}
                       >
                         Slave {s.id}
                       </button>
@@ -687,9 +681,8 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
                       <button
                         title="RTU Communication Settings"
                         onClick={() => openSlaveRTUModal(normalizeSlave(s))}
-                        className={`px-2 py-1.5 border-l text-xs transition-colors ${
-                          isActive ? "border-zinc-600 bg-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-700" : "border-slate-200 bg-white text-slate-400 hover:text-slate-700 hover:bg-slate-50"
-                        }`}
+                        className={`px-2 py-1.5 border-l text-xs transition-colors ${isActive ? "border-zinc-600 bg-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-700" : "border-slate-200 bg-white text-slate-400 hover:text-slate-700 hover:bg-slate-50"
+                          }`}
                       >
                         <Settings size={13} />
                       </button>
@@ -698,9 +691,8 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
                         disabled={isReadOnly}
                         title="Rename Slave ID"
                         onClick={() => openRenameModal(s.id)}
-                        className={`px-2 py-1.5 border-l text-xs transition-colors ${
-                          isActive ? "border-zinc-600 bg-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-700" : "border-slate-200 bg-white text-slate-400 hover:text-slate-700 hover:bg-slate-50"
-                        }`}
+                        className={`px-2 py-1.5 border-l text-xs transition-colors ${isActive ? "border-zinc-600 bg-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-700" : "border-slate-200 bg-white text-slate-400 hover:text-slate-700 hover:bg-slate-50"
+                          }`}
                       >
                         <Pencil size={13} />
                       </button>
@@ -709,9 +701,8 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
                         disabled={isReadOnly}
                         title="Remove Slave"
                         onClick={() => removeSlave(s.id)}
-                        className={`px-2 py-1.5 border-l text-xs transition-colors ${
-                          isActive ? "border-zinc-600 bg-zinc-900 text-zinc-400 hover:text-white hover:bg-zinc-700" : "border-slate-200 bg-white text-slate-300 hover:text-rose-500 hover:bg-rose-50"
-                        }`}
+                        className={`px-2 py-1.5 border-l text-xs transition-colors ${isActive ? "border-zinc-600 bg-zinc-900 text-zinc-400 hover:text-white hover:bg-zinc-700" : "border-slate-200 bg-white text-slate-300 hover:text-rose-500 hover:bg-rose-50"
+                          }`}
                       >
                         <X size={13} />
                       </button>
@@ -845,10 +836,10 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
           <div className="space-y-4">
             {[
               { label: "RS485 Port", key: "rs485_port", isPort: true },
-              { label: "Baud Rate", key: "baudRate", options: ["300","600","1200","2400","4800","9600","19200","38400","57600","115200","230400"], isNum: true },
-              { label: "Parity", key: "parity", options: ["Even","Odd","None"] },
-              { label: "Data Bits", key: "dataBits", options: [5,6,7,8], isNum: true },
-              { label: "Stop Bits", key: "stopBits", options: [1,2], isNum: true },
+              { label: "Baud Rate", key: "baudRate", options: ["300", "600", "1200", "2400", "4800", "9600", "19200", "38400", "57600", "115200", "230400"], isNum: true },
+              { label: "Parity", key: "parity", options: ["Even", "Odd", "None"] },
+              { label: "Data Bits", key: "dataBits", options: [5, 6, 7, 8], isNum: true },
+              { label: "Stop Bits", key: "stopBits", options: [1, 2], isNum: true },
             ].map(({ label, key, options, isNum, isPort }) => (
               <label key={key} className="block">
                 <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">{label}</span>
@@ -1091,7 +1082,7 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
                   isReadOnly={false}
                   onRowChange={updatePresetEditRow}
                   onRemoveRow={removePresetEditRow}
-                  onAlertOpen={() => {}}
+                  onAlertOpen={() => { }}
                 />
               )}
             </div>
