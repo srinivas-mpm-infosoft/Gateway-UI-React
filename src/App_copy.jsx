@@ -6,6 +6,7 @@ import Login from "./pages/login";
 import "./App.css";
 import { ToastProvider } from "./components/ToastContext";
 import { useAuthStore } from "./store/useAuthStore";
+import GrafanaFrame from "./pages/GrafanaFrame";
 
 export default function App() {
   const [activePanel, setActivePanel] = useState("io-general");
@@ -58,158 +59,112 @@ export default function App() {
     return <Login />;
   }
 
-  return (
+return (
     <ToastProvider>
-          {!isAuthenticated ? (
-      <Login />
-    ) : (
-      <div className="h-screen w-screen overflow-hidden">
-
-        {/* 🔥 GRAFANA BACKGROUND */}
-        <iframe
-          src="http://10.42.0.183:3000/d/ad666l4/mixer-dashboard?kiosk"
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            border: "none",
-            zIndex: 0,
-          }}
-        />
-
-        {/* 🌑 BACKDROP (only when panel open & not fullscreen) */}
-        {open && !fullscreen && (
-          <div
-            onClick={() => setOpen(false)}
+      {!isAuthenticated ? (
+        <Login />
+      ) : (
+        <>
+          {/* 🔥 GRAFANA BACKGROUND — outside all wrappers, truly fixed */}
+          {/* <iframe
+            src="http://10.42.0.183:3000/d/ad666l4/mixer-dashboard?kiosk"
             style={{
               position: "fixed",
               top: 0,
               left: 0,
               width: "100%",
               height: "100%",
-              background: "rgba(0,0,0,0.3)",
-              zIndex: 999,
+              border: "none",
+              zIndex: 0,
             }}
-          />
-        )}
+          /> */}
+          <GrafanaFrame/>
 
-        {/* 🔵 FLOATING BUBBLE */}
-        {!open && (
+          {/* 🌑 BACKDROP */}
+          {open && !fullscreen && (
+            <div
+              onClick={() => setOpen(false)}
+              style={{
+                position: "fixed",
+                top: 0,
+                left: 0,
+                width: "100vw",
+                height: "100vh",
+                zIndex: 999,
+              }}
+            />
+          )}
+
+          {/* 🔵 FLOATING BUBBLE */}
+          {!open && (
+            <div
+              onClick={() => setOpen(true)}
+              style={{
+                position: "fixed",
+                bottom: "20px",
+                right: "20px",
+                width: "100px",
+                height: "60px",
+                borderRadius: "60%",
+                background: "#2563eb",
+                color: "white",
+                fontSize: "22px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                zIndex: 1000,
+                boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
+              }}
+            >
+              ☰
+            </div>
+          )}
+
+          {/* 📦 PANEL */}
           <div
-            onClick={() => setOpen(true)}
             style={{
               position: "fixed",
-              bottom: "20px",
-              right: "20px",
-width:"100px",
-              height: "60px",
-              borderRadius: "60%",
-              background: "#2563eb",
-              color: "white",
-              fontSize: "22px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-              zIndex: 1000,
-              boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
+              top: 0,
+              right: 0,
+              width: fullscreen ? "100%" : "380px",
+              height: "100vh",
+              background: "#dfe3ea",
+              zIndex: 1001,
+              boxShadow: fullscreen ? "none" : "-5px 0 20px rgba(0,0,0,0.5)",
+              transform: open ? "translateX(0)" : "translateX(100%)",
+              opacity: open ? 1 : 0,
+              pointerEvents: open ? "auto" : "none",
+              transition: "all 0.3s ease-in-out",
             }}
           >
-            ☰
-          </div>
-        )}
-
-        {/* 📦 PANEL */}
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            right: 0,
-            width: fullscreen ? "100%" : "380px",
-            height: "100%",
-            background: "#dfe3ea",
-            zIndex: 1001,
-            boxShadow: fullscreen
-              ? "none"
-              : "-5px 0 20px rgba(0,0,0,0.5)",
-            transform: open ? "translateX(0)" : "translateX(100%)",
-            transition: "all 0.3s ease-in-out",
-          }}
-        >
-          {/* 🔧 CONTROL BAR */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "flex-end",
-              gap: "10px",
-              padding: "10px",
-            }}
-          >
-            {/* FULLSCREEN TOGGLE */}
-            <button
-              onClick={() => setFullscreen(!fullscreen)}
-              style={{ fontSize: "16px", cursor: "pointer" }}
-            >
-              {fullscreen ? "🗗" : "🗖"}
-            </button>
-
-            {/* MINIMIZE */}
-            <button
-              onClick={() => {
-                setOpen(false);
-                setFullscreen(false);
-              }}
-              style={{ fontSize: "18px", cursor: "pointer" }}
-            >
-              —
-            </button>
-          </div>
-
-          {/* 🔥 YOUR EXISTING UI */}
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              height: "calc(100% - 40px)",
-            }}
-          >
-            {/* Top Bar */}
-            <div style={{ flexShrink: 0 }}>
-              <WindowBar />
+            {/* 🔧 CONTROL BAR */}
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", padding: "10px" }}>
+              <button onClick={() => setFullscreen(!fullscreen)} style={{ fontSize: "16px", cursor: "pointer" }}>
+                {fullscreen ? "🗗" : "🗖"}
+              </button>
+              <button onClick={() => { setOpen(false); setFullscreen(false); }} style={{ fontSize: "18px", cursor: "pointer" }}>
+                —
+              </button>
             </div>
 
-            {/* Body */}
-            <div
-              style={{
-                display: "flex",
-                flex: 1,
-                overflow: "hidden",
-              }}
-            >
+            {/* 🔥 YOUR EXISTING UI */}
+            <div style={{ display: "flex", flexDirection: "column", height: "calc(100% - 40px)" }}>
               <div style={{ flexShrink: 0 }}>
-                <Sidebar
-                  active={activePanel}
-                  onSelect={setActivePanel}
-                  role={user?.role}
-                />
+                <WindowBar />
               </div>
-
-              <main
-                style={{
-                  flex: 1,
-                  overflowY: "auto",
-                  background: "#f8fafc",
-                }}
-              >
-                <MainPanel panel={activePanel} user={user} />
-              </main>
+              <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+                <div style={{ flexShrink: 0 }}>
+                  <Sidebar active={activePanel} onSelect={setActivePanel} role={user?.role} />
+                </div>
+                <main style={{ flex: 1, overflowY: "auto", background: "#f8fafc", minHeight: "100%" }}>
+                  <MainPanel panel={activePanel} user={user} />
+                </main>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-    )}
+        </>
+      )}
     </ToastProvider>
   );
 }

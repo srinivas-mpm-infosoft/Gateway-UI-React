@@ -941,6 +941,14 @@ function ensureBase() {
     };
   if (!config.plc_configurations) config.plc_configurations = [];
   if (!config.ModbusRTU.transmitters) config.ModbusRTU.transmitters = [];
+  // Remove orphaned registersBySlave keys that have no matching slave id
+  Object.values(config.ModbusRTU.Devices.brands || {}).forEach((brand) => {
+    if (!brand.registersBySlave || !brand.slaves) return;
+    const validIds = new Set((brand.slaves || []).map((s) => String(s.id)));
+    Object.keys(brand.registersBySlave).forEach((key) => {
+      if (!validIds.has(key)) delete brand.registersBySlave[key];
+    });
+  });
 }
 
 // Optional role; safe fallback to guest
@@ -1368,6 +1376,7 @@ function readDBSettings(prefix) {
 }
 
 function normalizeRegisterRow(r) {
+  const mode = r.mode ?? (r.write ? "write" : "read");
   return {
     name: r.name ?? "",
     start: r.start ?? "",
@@ -1382,10 +1391,69 @@ function normalizeRegisterRow(r) {
     process_max: r.process_max ?? "",
     sensor_type: r.sensor_type ?? "",
     eng_symbol: r.eng_symbol ?? "",
-
-    eng_unit: r.eng_unit ?? "4-20mA",   // ✅ NEW
+    eng_unit: r.eng_unit ?? "4-20mA",
     enabled: !!r.enabled,
+    // Write/Alert fields
+    mode,
+    read: mode === "read",
+    write: mode === "write",
+    write_mode: r.write_mode ?? "independent",
+    write_min_reg: r.write_min_reg ?? "",
+    write_max_reg: r.write_max_reg ?? "",
+    write_pct: r.write_pct ?? "",
+    write_boolean: r.write_boolean ?? "true",
+    alert_allocated_to: r.alert_allocated_to ?? "",
   };
+}
+
+/**
+ * Returns all write+alert registers across every brand/slave.
+ * Each entry: { brandKey, brandLabel, slaveId, regName, sql_type, min, max, allocatedTo }
+ */
+function getAllWriteAlertRegs() {
+  const result = [];
+  const brands = config.ModbusRTU?.Devices?.brands || {};
+  Object.entries(brands).forEach(([brandKey, brandData]) => {
+    const brandLabel = brandData.label || brandKey;
+    Object.entries(brandData.registersBySlave || {}).forEach(([slaveId, regs]) => {
+      (regs || []).forEach((reg) => {
+        const n = normalizeRegisterRow(reg);
+        if (n.mode === "write" && n.write_mode === "alert") {
+          result.push({
+            brandKey, brandLabel, slaveId,
+            regName: n.name,
+            sql_type: n.sql_type,
+            min: n.write_min_reg,
+            max: n.write_max_reg,
+            allocatedTo: n.alert_allocated_to || "",
+          });
+        }
+      });
+    });
+  });
+  return result;
+}
+
+/**
+ * Set alert_allocated_to on a write+alert register in config.
+ * ownerKey = "brandKey|slaveId|regName" of the register that is being configured,
+ * targetKey = "brandKey|slaveId|regName" of the write+alert register being allocated.
+ * Pass "" for targetKey to clear a previous allocation.
+ */
+function setWriteAlertAllocation(previousTargetKey, newTargetKey, ownerKey) {
+  const brands = config.ModbusRTU?.Devices?.brands || {};
+  // Clear previous allocation
+  if (previousTargetKey) {
+    const [bk, sid, rn] = previousTargetKey.split("|");
+    const regs = brands[bk]?.registersBySlave?.[sid] || [];
+    regs.forEach((reg) => { if (reg.name === rn) reg.alert_allocated_to = ""; });
+  }
+  // Set new allocation
+  if (newTargetKey) {
+    const [bk, sid, rn] = newTargetKey.split("|");
+    const regs = brands[bk]?.registersBySlave?.[sid] || [];
+    regs.forEach((reg) => { if (reg.name === rn) reg.alert_allocated_to = ownerKey; });
+  }
 }
 
 function slaveSettingsModal(slave) {
@@ -1713,19 +1781,21 @@ function renderModbusDevices(
               <tr>
                 <th>S.No</th>
                 <th>Name</th>
-                <th>Start Address</th>
+                <th>Start Addr</th>
                 <th>Offset</th>
-            <th >Type of Register</th>
+                <th>Mode</th>
+                <th>Register Type</th>
                 <th style="display:none">Conversion</th>
-                <th>Type of Sensor</th>
-<th>Engineering Symbol</th>
-
-                <th>Electrical Range</th>
+                <th>Sensor Type</th>
+                <th>Eng Symbol</th>
+                <th>Elec. Range</th>
                 <th>Data Type</th>
                 <th>Length</th>
                 <th>Multiply</th>
-<th>Divide</th>
+                <th>Divide</th>
                 <th>Process Range</th>
+                <th>Write Type</th>
+                <th>Write Fields</th>
                 <th>Enabled</th>
                 <th>Remove</th>
               </tr>
@@ -1906,23 +1976,24 @@ function renderModbusDevices(
       const field = e.target.getAttribute("data-field");
       if (!Number.isInteger(idx) || !field) return;
       let v = e.target.type === "checkbox" ? e.target.checked : e.target.value;
-      if (
-        ["start", "offset", "length", "multiply", "divide"].includes(field) &&
-        e.target.type !== "checkbox"
-      )
+      if (["start", "offset", "length", "multiply", "divide"].includes(field) && e.target.type !== "checkbox")
         v = parseInt(v, 10);
       workingRows[idx] = workingRows[idx] || {};
       workingRows[idx][field] = v;
+
       if (field === "sensor_type") {
-        const cfg = getEngineeringConfig()
-          .find(e => e.type === v);
-
-        workingRows[idx].eng_symbol =
-          cfg && cfg.symbols.length ? cfg.symbols[0] : "";
-
+        const cfg = getEngineeringConfig().find(e => e.type === v);
+        workingRows[idx].eng_symbol = cfg && cfg.symbols.length ? cfg.symbols[0] : "";
+        rerenderRegsTable(workingRows);
+      } else if (field === "mode") {
+        // Keep read/write booleans in sync; rerender to show/hide columns
+        workingRows[idx].read = v === "read";
+        workingRows[idx].write = v === "write";
+        rerenderRegsTable(workingRows);
+      } else if (field === "write_mode" || field === "sql_type") {
+        // Write type or data type change affects which write fields are shown
         rerenderRegsTable(workingRows);
       }
-
     });
     table?.addEventListener("click", (e) => {
       const btn = e.target.closest(".em-reg-remove");
@@ -1939,15 +2010,24 @@ function renderModbusDevices(
         offset: 0,
         type: "Input Register",
         sensor_type: "",
-        eng_unit: "",
+        eng_unit: "4-20mA",
         conversion: "Float: Big Endian",
-        sql_type: "FLOAT", // 🔥 NEW
+        sql_type: "FLOAT",
         length: 2,
         multiply: 1,
         divide: 1,
         process_min: "",
         process_max: "",
         enabled: false,
+        mode: "read",
+        read: true,
+        write: false,
+        write_mode: "independent",
+        write_min_reg: "",
+        write_max_reg: "",
+        write_pct: "",
+        write_boolean: "true",
+        alert_allocated_to: "",
       });
 
       rerenderRegsTable(workingRows);
@@ -2016,18 +2096,10 @@ function renderModbusDevices(
     const saveBtn = document.getElementById("em-save");
     if (saveBtn) {
       saveBtn.onclick = () => {
-        brand.registersBySlave = brand.registersBySlave || {};
-        brand.registersBySlave[regKey] =
-          deepClone(workingRows.map(normalizeRegisterRow));
-
-
         for (let i = 0; i < workingRows.length; i++) {
           const r = workingRows[i];
-          if (
-            r.process_min !== "" &&
-            r.process_max !== "" &&
-            Number(r.process_min) >= Number(r.process_max)
-          ) {
+          if (r.mode === "read" && r.process_min !== "" && r.process_max !== "" &&
+              Number(r.process_min) >= Number(r.process_max)) {
             alert(`Row ${i + 1}: Process Min must be less than Process Max`);
             return;
           }
@@ -2037,70 +2109,24 @@ function renderModbusDevices(
           }
         }
 
-        if (currentSlaveObj) {
-          Object.assign(currentSlaveObj, readDBSettings("slave"));
-
-          currentSlaveObj.enabled =
-            document.getElementById("slave-enabled")?.checked ?? true;
-          currentSlaveObj.use_usb =
-            document.getElementById("slave-use-usb")?.checked ?? false;
-
-
-          currentSlaveObj.pollingInterval =
-            parseInt(
-              document.getElementById("slave-polling-interval")?.value,
-              10,
-            ) || 1;
-
-          currentSlaveObj.pollingIntervalUnit =
-            document.getElementById("slave-polling-unit")?.value || "Sec";
-        }
-
-        saveConfig();
-        flashTick("em-tick");
-      };
-    }
-
-  } else {
-    const saveBtn = document.getElementById("em-save");
-    if (saveBtn) {
-      saveBtn.onclick = () => {
         brand.registersBySlave = brand.registersBySlave || {};
-        brand.registersBySlave[regKey] =
-          deepClone(workingRows.map(normalizeRegisterRow));
+        brand.registersBySlave[regKey] = deepClone(workingRows.map(normalizeRegisterRow));
 
-
-        for (let i = 0; i < workingRows.length; i++) {
-          const r = workingRows[i];
-          if (r.sensor_type && !r.eng_symbol) {
-            alert(`Row ${i + 1}: Engineering symbol is required for sensor type "${r.sensor_type}"`);
-            return;
+        // Persist write+alert allocations: for each write+alert row that is already
+        // allocated (from a previous save), keep the allocation intact in the config.
+        workingRows.forEach((r) => {
+          if (r.mode === "write" && r.write_mode === "alert" && r.alert_allocated_to) {
+            const ownerKey = `${brandKey}|${regKey}|${r.name}`;
+            setWriteAlertAllocation("", `${brandKey}|${regKey}|${r.name}`, r.alert_allocated_to);
           }
-          if (
-            r.process_min !== "" &&
-            r.process_max !== "" &&
-            Number(r.process_min) >= Number(r.process_max)
-          ) {
-            alert(`Row ${i + 1}: Process Min must be less than Process Max`);
-            return;
-          }
-        }
+        });
 
         if (currentSlaveObj) {
           Object.assign(currentSlaveObj, readDBSettings("slave"));
-
-          currentSlaveObj.enabled =
-            document.getElementById("slave-enabled")?.checked ?? true;
-          currentSlaveObj.use_usb =
-            document.getElementById("slave-use-usb")?.checked ?? false;
-
-
+          currentSlaveObj.enabled = document.getElementById("slave-enabled")?.checked ?? true;
+          currentSlaveObj.use_usb = document.getElementById("slave-use-usb")?.checked ?? false;
           currentSlaveObj.pollingInterval =
-            parseInt(
-              document.getElementById("slave-polling-interval")?.value,
-              10,
-            ) || 1;
-
+            parseInt(document.getElementById("slave-polling-interval")?.value, 10) || 1;
           currentSlaveObj.pollingIntervalUnit =
             document.getElementById("slave-polling-unit")?.value || "Sec";
         }
@@ -2109,24 +2135,42 @@ function renderModbusDevices(
         flashTick("em-tick");
       };
     }
-
   }
 }
 
 function migrateModbusSlaveId(brandKey, oldId, newId) {
+  // 1. Migrate alarmSettings.Modbus slave key
   const mod = config.alarmSettings?.Modbus;
-  if (!mod?.[brandKey]?.slaves?.[oldId]) return;
+  if (mod?.[brandKey]?.slaves?.[oldId]) {
+    mod[brandKey].slaves[newId] = mod[brandKey].slaves[oldId];
+    delete mod[brandKey].slaves[oldId];
+  }
 
-  mod[brandKey].slaves[newId] = mod[brandKey].slaves[oldId];
-  delete mod[brandKey].slaves[oldId];
+  // 2. Migrate alarmSettings.ModbusRTU keys — pattern: {brandKey}_S{slaveId}_{regName}
+  const rtu = config.alarmSettings?.ModbusRTU;
+  if (!rtu) return;
+  const oldPrefix = `${brandKey}_S${oldId}_`;
+  const newPrefix = `${brandKey}_S${newId}_`;
+  Object.keys(rtu).forEach((key) => {
+    if (key.startsWith(oldPrefix)) {
+      const regName = key.slice(oldPrefix.length);
+      rtu[`${newPrefix}${regName}`] = rtu[key];
+      delete rtu[key];
+    }
+  });
 }
 
 function deleteModbusBrandAlarms(brandKey) {
-  if (
-    config.alarmSettings?.Modbus &&
-    config.alarmSettings.Modbus[brandKey]
-  ) {
+  if (config.alarmSettings?.Modbus?.[brandKey]) {
     delete config.alarmSettings.Modbus[brandKey];
+  }
+  // Also remove all alarmSettings.ModbusRTU keys for this brand
+  const rtu = config.alarmSettings?.ModbusRTU;
+  if (rtu) {
+    const prefix = `${brandKey}_S`;
+    Object.keys(rtu).forEach((key) => {
+      if (key.startsWith(prefix)) delete rtu[key];
+    });
   }
 }
 
@@ -2136,142 +2180,138 @@ function getEngineeringConfig() {
 
 
 function rowHtml(r, i) {
+  const isWrite = r.mode === "write";
+  const isBool = r.sql_type === "BOOLEAN";
+
+  // Write Fields cell content
+  let writeFieldsHtml = "";
+  if (isWrite) {
+    if (r.write_mode === "independent") {
+      if (isBool) {
+        writeFieldsHtml = `
+          <select data-field="write_boolean" data-index="${i}" style="width:80px;">
+            <option value="true" ${r.write_boolean === "true" ? "selected" : ""}>True</option>
+            <option value="false" ${r.write_boolean === "false" ? "selected" : ""}>False</option>
+          </select>`;
+      } else {
+        writeFieldsHtml = `
+          <div style="display:flex;gap:4px;">
+            <input type="number" placeholder="Min" data-field="write_min_reg" data-index="${i}" value="${esc(String(r.write_min_reg))}" style="width:60px;">
+            <input type="number" placeholder="Max" data-field="write_max_reg" data-index="${i}" value="${esc(String(r.write_max_reg))}" style="width:60px;">
+            <input type="number" placeholder="%" min="0" max="100" data-field="write_pct" data-index="${i}" value="${esc(String(r.write_pct))}" style="width:50px;">
+          </div>`;
+      }
+    } else {
+      // Alert mode
+      if (isBool) {
+        writeFieldsHtml = `<span style="color:#999;font-size:11px;">Triggers on change</span>`;
+      } else {
+        writeFieldsHtml = `
+          <div style="display:flex;gap:4px;">
+            <input type="number" placeholder="Min" data-field="write_min_reg" data-index="${i}" value="${esc(String(r.write_min_reg))}" style="width:65px;">
+            <input type="number" placeholder="Max" data-field="write_max_reg" data-index="${i}" value="${esc(String(r.write_max_reg))}" style="width:65px;">
+          </div>`;
+      }
+    }
+  }
+
   return `
           <tr>
             <td>${i + 1}</td>
-            <td><input type="text" value="${esc(
-    r.name,
-  )}" data-field="name" data-index="${i}" style="width:180px;"></td>
-            <td><input type="number" value="${numOrEmpty(
-    r.start,
-  )}" data-field="start" data-index="${i}" style="width:90px;"></td>
-            <td><input type="number" value="${numOrEmpty(
-    r.offset,
-    0,
-  )}" data-field="offset" data-index="${i}" style="width:70px;"></td>
-            <td >
+            <td><input type="text" value="${esc(r.name)}" data-field="name" data-index="${i}" style="width:180px;"></td>
+            <td><input type="number" value="${numOrEmpty(r.start)}" data-field="start" data-index="${i}" style="width:90px;"></td>
+            <td><input type="number" value="${numOrEmpty(r.offset, 0)}" data-field="offset" data-index="${i}" style="width:70px;"></td>
+
+            <!-- Mode -->
+            <td>
+              <select data-field="mode" data-index="${i}" style="width:75px;">
+                <option value="read" ${!isWrite ? "selected" : ""}>Read</option>
+                <option value="write" ${isWrite ? "selected" : ""}>Write</option>
+              </select>
+            </td>
+
+            <td>
               <select data-field="type" data-index="${i}">
-                              <option value="Coil" ${r.type === "Coil" ? "selected" : ""
-    }>Coil</option>
-                    <option value="Discrete Input" ${r.type === "Discrete Input" ? "selected" : ""
-    }>Discrete Input</option>
-                <option value="Holding Register" ${r.type === "Holding Register" ? "selected" : ""
-    }>Holding Register</option>
-                <option value="Input Register" ${r.type === "Input Register" ? "selected" : ""
-    }>Input Register</option>
+                <option value="Coil" ${r.type === "Coil" ? "selected" : ""}>Coil</option>
+                <option value="Discrete Input" ${r.type === "Discrete Input" ? "selected" : ""}>Discrete Input</option>
+                <option value="Holding Register" ${r.type === "Holding Register" ? "selected" : ""}>Holding Register</option>
+                <option value="Input Register" ${r.type === "Input Register" ? "selected" : ""}>Input Register</option>
               </select>
             </td>
             <td style="display:none">
-              <select data-field="conversion" data-index="${i} ">
-                <option value="Raw Hex" ${r.conversion === "Raw Hex" ? "selected" : ""
-    }>Raw Hex</option>
-                <option value="Integer" ${r.conversion === "Integer" ? "selected" : ""
-    }>Integer</option>
-                <option value="Double" ${r.conversion === "Double" ? "selected" : ""
-    }>Double</option>
-                <option value="Float: Big Endian" ${r.conversion === "Float: Big Endian" ? "selected" : ""
-    }>Float: Big Endian</option>
+              <select data-field="conversion" data-index="${i}">
+                <option value="Raw Hex" ${r.conversion === "Raw Hex" ? "selected" : ""}>Raw Hex</option>
+                <option value="Integer" ${r.conversion === "Integer" ? "selected" : ""}>Integer</option>
+                <option value="Double" ${r.conversion === "Double" ? "selected" : ""}>Double</option>
+                <option value="Float: Big Endian" ${r.conversion === "Float: Big Endian" ? "selected" : ""}>Float: Big Endian</option>
               </select>
             </td>
-<td>
-  <select data-field="sensor_type" data-index="${i}">
-    <option value="">— Select —</option>
-    ${getEngineeringConfig().map(e => `
-      <option value="${e.type}" ${r.sensor_type === e.type ? "selected" : ""}>
-        ${e.type}
-      </option>
-    `).join("")}
-  </select>
-</td>
-
-
-<td>
-  ${(() => {
-      const cfg = getEngineeringConfig()
-        .find(e => e.type === r.sensor_type);
-
-      if (!cfg || !cfg.symbols.length) return "";
-
-      return `
-        <select data-field="eng_symbol" data-index="${i}">
-          ${cfg.symbols.map(sym => `
-            <option value="${sym}" ${r.eng_symbol === sym ? "selected" : ""}>
-              ${sym}
-            </option>
-          `).join("")}
-        </select>
-      `;
-    })()
-    }
-</td>
-
 
             <td>
-  <select data-field="eng_unit" data-index="${i}">
-    <option value="4-20mA" ${r.eng_unit === "4-20mA" ? "selected" : ""}>4–20 mA</option>
-    <option value="0-20mA" ${r.eng_unit === "0-20mA" ? "selected" : ""}>0–20 mA</option>
-    <option value="0-10V"  ${r.eng_unit === "0-10V" ? "selected" : ""}>0–10 V</option>
-        <option value="0-5V"  ${r.eng_unit === "0-5V" ? "selected" : ""}>0–5 V</option>
-                <option value="1-5V"  ${r.eng_unit === "1-5V" ? "selected" : ""}>1–5 V</option>
-                                <option value="none"  ${r.eng_unit === "none" ? "selected" : ""}>Modbus RTU</option>
-
-
-
-  </select>
-</td>
-
-            <td>
-    <select data-field="sql_type" data-index="${i}">
-      <option value="FLOAT" ${r.sql_type === "FLOAT" ? "selected" : ""}>FLOAT</option>
-      <option value="INT" ${r.sql_type === "INT" ? "selected" : ""}>INT</option>
-      <option value="BIGINT" ${r.sql_type === "BIGINT" ? "selected" : ""}>BIGINT</option>
-      <option value="VARCHAR" ${r.sql_type === "VARCHAR" ? "selected" : ""}>VARCHAR</option>
-      <option value="BOOLEAN" ${r.sql_type === "BOOLEAN" ? "selected" : ""}>BOOLEAN</option>
-    </select>
-  </td>
-
-            <td><input type="number" value="${numOrEmpty(
-      r.length,
-      2,
-    )}" data-field="length" data-index="${i}" style="width:70px;"></td>
-            <td>
-  <input type="number"
-    step="any"
-    value="${numOrEmpty(r.multiply, 1)}"
-    data-field="multiply"
-    data-index="${i}"
-    style="width:70px;">
-</td>
-
-<td>
-  <input type="number"
-    step="any"
-    value="${numOrEmpty(r.divide, 1)}"
-    data-field="divide"
-    data-index="${i}"
-    style="width:70px;">
-</td>
-
-            <td>
-            
-              <div style="display:flex; gap:6px;">
-                <input type="number"
-                  placeholder="Min"
-                  value="${numOrEmpty(r.process_min)}"
-                  data-field="process_min"
-                  data-index="${i}"
-                  style="width:70px;">
-                <input type="number"
-                  placeholder="Max"
-                  value="${numOrEmpty(r.process_max)}"
-                  data-field="process_max"
-                  data-index="${i}"
-                  style="width:70px;">
-              </div>
+              <select data-field="sensor_type" data-index="${i}">
+                <option value="">— Select —</option>
+                ${getEngineeringConfig().map(e => `
+                  <option value="${e.type}" ${r.sensor_type === e.type ? "selected" : ""}>${e.type}</option>
+                `).join("")}
+              </select>
             </td>
 
-            <td><input type="checkbox" ${r.enabled ? "checked" : ""
-    } data-field="enabled" data-index="${i}"></td>
+            <td>
+              ${(() => {
+                const cfg = getEngineeringConfig().find(e => e.type === r.sensor_type);
+                if (!cfg || !cfg.symbols.length) return "";
+                return `<select data-field="eng_symbol" data-index="${i}">
+                  ${cfg.symbols.map(sym => `<option value="${sym}" ${r.eng_symbol === sym ? "selected" : ""}>${sym}</option>`).join("")}
+                </select>`;
+              })()}
+            </td>
+
+            <td>
+              <select data-field="eng_unit" data-index="${i}">
+                <option value="4-20mA" ${r.eng_unit === "4-20mA" ? "selected" : ""}>4–20 mA</option>
+                <option value="0-20mA" ${r.eng_unit === "0-20mA" ? "selected" : ""}>0–20 mA</option>
+                <option value="0-10V"  ${r.eng_unit === "0-10V"  ? "selected" : ""}>0–10 V</option>
+                <option value="0-5V"   ${r.eng_unit === "0-5V"   ? "selected" : ""}>0–5 V</option>
+                <option value="1-5V"   ${r.eng_unit === "1-5V"   ? "selected" : ""}>1–5 V</option>
+                <option value="none"   ${r.eng_unit === "none"   ? "selected" : ""}>Modbus RTU</option>
+              </select>
+            </td>
+
+            <td>
+              <select data-field="sql_type" data-index="${i}">
+                <option value="FLOAT"   ${r.sql_type === "FLOAT"   ? "selected" : ""}>FLOAT</option>
+                <option value="INT"     ${r.sql_type === "INT"     ? "selected" : ""}>INT</option>
+                <option value="BIGINT"  ${r.sql_type === "BIGINT"  ? "selected" : ""}>BIGINT</option>
+                <option value="BOOLEAN" ${r.sql_type === "BOOLEAN" ? "selected" : ""}>BOOLEAN</option>
+              </select>
+            </td>
+
+            <td><input type="number" value="${numOrEmpty(r.length, 2)}" data-field="length" data-index="${i}" style="width:70px;"></td>
+            <td><input type="number" step="any" value="${numOrEmpty(r.multiply, 1)}" data-field="multiply" data-index="${i}" style="width:70px;"></td>
+            <td><input type="number" step="any" value="${numOrEmpty(r.divide, 1)}" data-field="divide" data-index="${i}" style="width:70px;"></td>
+
+            <!-- Process Range: only for Read rows -->
+            <td>
+              ${!isWrite ? `
+                <div style="display:flex;gap:6px;">
+                  <input type="number" placeholder="Min" value="${numOrEmpty(r.process_min)}" data-field="process_min" data-index="${i}" style="width:70px;">
+                  <input type="number" placeholder="Max" value="${numOrEmpty(r.process_max)}" data-field="process_max" data-index="${i}" style="width:70px;">
+                </div>` : `<span style="color:#bbb;">—</span>`}
+            </td>
+
+            <!-- Write Type: only for Write rows -->
+            <td>
+              ${isWrite ? `
+                <select data-field="write_mode" data-index="${i}" style="width:105px;">
+                  <option value="independent" ${r.write_mode === "independent" ? "selected" : ""}>Independent</option>
+                  <option value="alert"       ${r.write_mode === "alert"       ? "selected" : ""}>Alert</option>
+                </select>` : `<span style="color:#bbb;">—</span>`}
+            </td>
+
+            <!-- Write Fields: only for Write rows -->
+            <td>${writeFieldsHtml}</td>
+
+            <td><input type="checkbox" ${r.enabled ? "checked" : ""} data-field="enabled" data-index="${i}"></td>
             <td style="text-align:center;">
               <button type="button" class="button em-reg-remove" data-index="${i}" title="Remove">×</button>
             </td>
@@ -2286,20 +2326,21 @@ function rerenderRegsTable(rows) {
           <tr>
             <th>S.No</th>
             <th>Name</th>
-            <th>Start Address</th>
+            <th>Start Addr</th>
             <th>Offset</th>
-            <th>Type of Register</th>
-                <th style="display:none">Conversion</th>
-                <th>Type of Sensor</th>
-<th>Engineering Symbol</th>
-
-            <th>Electrical Range</th>
+            <th>Mode</th>
+            <th>Register Type</th>
+            <th style="display:none">Conversion</th>
+            <th>Sensor Type</th>
+            <th>Eng Symbol</th>
+            <th>Elec. Range</th>
             <th>Data Type</th>
             <th>Length</th>
             <th>Multiply</th>
-<th>Divide</th>
-
+            <th>Divide</th>
             <th>Process Range</th>
+            <th>Write Type</th>
+            <th>Write Fields</th>
             <th>Enabled</th>
             <th>Remove</th>
           </tr>

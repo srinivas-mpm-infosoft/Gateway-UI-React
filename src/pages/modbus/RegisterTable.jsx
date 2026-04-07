@@ -4,17 +4,23 @@ import { Bell } from "lucide-react";
 /**
  * RegisterTable – register row table for a Modbus RTU slave.
  *
- * Columns: S.No | Name | Start | Offset | Register Type | Sensor Type |
- *          Eng Symbol | Electrical Range | Data Type | Length | Multiply |
- *          Divide | Process Range | Set Point | Read | Write | Alert | Remove
- *
- * Lower Limit, Upper Limit, DO Pin, DO Status have moved into the Alert
- * Settings modal (opened via the bell button).
+ * Mode column (after Offset) controls Read vs Write behaviour:
+ *   Read  → Process Range min/max shown; Write Type and Write Fields show "—"
+ *   Write → Process Range shows "—"; Write Type dropdown (Independent / Alert) appears;
+ *             Independent + BOOLEAN      → True / False select
+ *             Independent + other types  → Min, Max, Write % inputs
+ *             Alert                      → Min, Max inputs (synced to Alert modal limits)
  */
+
+// Only BOOLEAN data type uses a true/false toggle; all others use numeric range + %
+const BOOL_TYPES = ["BOOLEAN"];
+
+const Dash = () => <span className="text-slate-300 text-xs">—</span>;
+
 export default function RegisterTable({
   rows,
   engineeringConfig,
-  isSuperAdmin,   // kept for future use; alert modal handles superadmin fields
+  isSuperAdmin,   // kept for future use
   isReadOnly,
   onRowChange,
   onRemoveRow,
@@ -23,18 +29,19 @@ export default function RegisterTable({
   const engCfgList = engineeringConfig || [];
 
   const thCls = "px-3 py-2.5 text-left text-[11px] font-semibold text-zinc-300 uppercase tracking-wider whitespace-nowrap";
-  const tdCls = "px-2 py-1.5 border-b border-slate-100";
+  const tdCls = "px-2 py-1.5 border-b border-slate-100 w-20";
   const inputCls = "border border-slate-200 rounded-md px-2 py-1 text-xs bg-white focus:ring-1 focus:ring-zinc-400 focus:border-zinc-400 w-full disabled:bg-slate-50 disabled:text-slate-400 text-slate-700";
   const selectCls = `${inputCls}`;
 
   return (
-    <table className="w-full text-xs border-collapse" style={{ minWidth: 1100 }}>
+    <table className="w-full text-xs border-collapse" style={{ minWidth: 1400 }}>
       <thead>
         <tr className="bg-zinc-800">
           <th className={thCls}>#</th>
           <th className={thCls}>Name</th>
           <th className={thCls}>Start Addr</th>
           <th className={thCls}>Offset</th>
+          <th className={thCls}>Mode</th>
           <th className={thCls}>Register Type</th>
           <th className={thCls}>Sensor Type</th>
           <th className={thCls}>Eng Symbol</th>
@@ -43,9 +50,11 @@ export default function RegisterTable({
           <th className={thCls}>Length</th>
           <th className={thCls}>Multiply</th>
           <th className={thCls}>Divide</th>
+          {/* Read-only column */}
           <th className={thCls}>Process Range</th>
-          <th className={`${thCls} text-center`}>Read</th>
-          <th className={`${thCls} text-center`}>Write</th>
+          {/* Write-only columns */}
+          <th className={thCls}>Write Type</th>
+          <th className={thCls}>Write Fields</th>
           <th className={`${thCls} text-center`}>Alert</th>
           <th className={`${thCls} text-center`}>Del</th>
         </tr>
@@ -54,7 +63,9 @@ export default function RegisterTable({
         {rows.map((r, i) => {
           const cfg = engCfgList.find((e) => e.type === r.sensor_type);
           const rowBg = i % 2 === 0 ? "bg-white" : "bg-gray-50/80";
-          const hasAlert = !!r.alert?.enabled;
+          const hasAlert = (r.alerts ?? []).some(a => a.enabled);
+          const isWrite = r.mode === "write";
+          const isBool = BOOL_TYPES.includes(r.sql_type);
 
           return (
             <tr key={i} className={`${rowBg} hover:bg-zinc-50/80 transition-colors group`}>
@@ -95,6 +106,23 @@ export default function RegisterTable({
                   onChange={(e) => onRowChange(i, "offset", parseInt(e.target.value, 10) || 0)}
                   className={inputCls}
                 />
+              </td>
+
+              {/* Mode (Read / Write) */}
+              <td className={tdCls}>
+                <select
+                  value={r.mode ?? "read"}
+                  disabled={isReadOnly}
+                  onChange={(e) => {
+                    const m = e.target.value;
+                    onRowChange(i, { mode: m, read: m === "read", write: m === "write" });
+                  }}
+                  className={selectCls}
+                  style={{ width: 75 }}
+                >
+                  <option value="read">Read</option>
+                  <option value="write">Write</option>
+                </select>
               </td>
 
               {/* Register Type */}
@@ -148,7 +176,7 @@ export default function RegisterTable({
                     ))}
                   </select>
                 ) : (
-                  <span className="text-slate-300">—</span>
+                  <Dash />
                 )}
               </td>
 
@@ -182,7 +210,6 @@ export default function RegisterTable({
                   <option>FLOAT</option>
                   <option>INT</option>
                   <option>BIGINT</option>
-                  <option>VARCHAR</option>
                   <option>BOOLEAN</option>
                 </select>
               </td>
@@ -225,52 +252,139 @@ export default function RegisterTable({
                 />
               </td>
 
-              {/* Process Range (min / max) */}
+              {/* ── Process Range — only meaningful for Read rows ── */}
               <td className={tdCls}>
-                <div className="flex gap-1">
-                  <input
-                    type="number"
-                    placeholder="Min"
-                    style={{ width: 60 }}
-                    value={r.process_min ?? ""}
-                    disabled={isReadOnly}
-                    onChange={(e) => onRowChange(i, "process_min", e.target.value)}
-                    className={inputCls}
-                  />
-                  <input
-                    type="number"
-                    placeholder="Max"
-                    style={{ width: 60 }}
-                    value={r.process_max ?? ""}
-                    disabled={isReadOnly}
-                    onChange={(e) => onRowChange(i, "process_max", e.target.value)}
-                    className={inputCls}
-                  />
-                </div>
+                {!isWrite ? (
+                  <div className="flex gap-1">
+                    <input
+                      type="number"
+                      placeholder="Min"
+                      style={{ width: 60 }}
+                      value={r.process_min ?? ""}
+                      disabled={isReadOnly}
+                      onChange={(e) => onRowChange(i, "process_min", e.target.value)}
+                      className={inputCls}
+                    />
+                    <input
+                      type="number"
+                      placeholder="Max"
+                      style={{ width: 60 }}
+                      value={r.process_max ?? ""}
+                      disabled={isReadOnly}
+                      onChange={(e) => onRowChange(i, "process_max", e.target.value)}
+                      className={inputCls}
+                    />
+                  </div>
+                ) : <Dash />}
               </td>
 
- 
-
-              {/* Read */}
-              <td className={`${tdCls} text-center`}>
-                <input
-                  type="checkbox"
-                  checked={!!r.read}
-                  disabled={isReadOnly}
-                  onChange={(e) => onRowChange(i, "read", e.target.checked)}
-                  className="h-3.5 w-3.5 rounded border-slate-300 accent-zinc-700 cursor-pointer"
-                />
+              {/* ── Write Type — only meaningful for Write rows ── */}
+              <td className={tdCls}>
+                {isWrite ? (
+                  <select
+                    value={r.write_mode ?? "independent"}
+                    disabled={isReadOnly}
+                    onChange={(e) => onRowChange(i, "write_mode", e.target.value)}
+                    className={selectCls}
+                    style={{ width: 115 }}
+                  >
+                    <option value="independent">Independent</option>
+                    <option value="alert">Alert</option>
+                  </select>
+                ) : <Dash />}
               </td>
 
-              {/* Write */}
-              <td className={`${tdCls} text-center`}>
-                <input
-                  type="checkbox"
-                  checked={!!r.write}
-                  disabled={isReadOnly}
-                  onChange={(e) => onRowChange(i, "write", e.target.checked)}
-                  className="h-3.5 w-3.5 rounded border-slate-300 accent-zinc-700 cursor-pointer"
-                />
+              {/* ── Write Fields — only meaningful for Write rows ── */}
+              <td className={tdCls}>
+                {isWrite ? (
+                  <div className="flex gap-1 items-center">
+                    {r.write_mode === "independent" ? (
+                      isBool ? (
+                        // Independent + BOOLEAN: true / false toggle
+                        <select
+                          value={r.write_boolean ?? "true"}
+                          disabled={isReadOnly}
+                          onChange={(e) => onRowChange(i, "write_boolean", e.target.value)}
+                          className={selectCls}
+                          style={{ width: 80 }}
+                        >
+                          <option value="true">True</option>
+                          <option value="false">False</option>
+                        </select>
+                      ) : (
+                        // Independent + FLOAT / INT / BIGINT : Min, Max, Write %
+                        <>
+                          <input
+                            type="number"
+                            placeholder="Min"
+                            style={{ width: 60 }}
+                            value={r.write_min_reg ?? ""}
+                            disabled={isReadOnly}
+                            onChange={(e) => onRowChange(i, "write_min_reg", e.target.value)}
+                            className={inputCls}
+                          />
+                          <input
+                            type="number"
+                            placeholder="Max"
+                            style={{ width: 60 }}
+                            value={r.write_max_reg ?? ""}
+                            disabled={isReadOnly}
+                            onChange={(e) => onRowChange(i, "write_max_reg", e.target.value)}
+                            className={inputCls}
+                          />
+                          <input
+                            type="number"
+                            placeholder="Write%"
+                            style={{ width: 62 }}
+                            min={0}
+                            max={100}
+                            value={r.write_pct ?? ""}
+                            disabled={isReadOnly}
+                            onChange={(e) => onRowChange(i, "write_pct", e.target.value)}
+                            className={inputCls}
+                          />
+                        </>
+                      )
+                    ) : isBool ? (
+                      // Alert + BOOLEAN: no threshold inputs needed — alert fires on any change
+                      <span className="text-[10px] text-slate-400 italic">Triggers on change</span>
+                    ) : (
+                      // Alert + non-BOOLEAN: min and max thresholds — synced to Alert modal
+                      <>
+                        <input
+                          type="number"
+                          placeholder="Min"
+                          style={{ width: 65 }}
+                          value={r.write_min_reg ?? ""}
+                          disabled={isReadOnly}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            onRowChange(i, {
+                              write_min_reg: val,
+                              alert: { ...r.alert, lower_limit: val === "" ? "" : Number(val), enabled: true },
+                            });
+                          }}
+                          className={inputCls}
+                        />
+                        <input
+                          type="number"
+                          placeholder="Max"
+                          style={{ width: 65 }}
+                          value={r.write_max_reg ?? ""}
+                          disabled={isReadOnly}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            onRowChange(i, {
+                              write_max_reg: val,
+                              alert: { ...r.alert, upper_limit: val === "" ? "" : Number(val), enabled: true },
+                            });
+                          }}
+                          className={inputCls}
+                        />
+                      </>
+                    )}
+                  </div>
+                ) : null}
               </td>
 
               {/* Alert Settings */}

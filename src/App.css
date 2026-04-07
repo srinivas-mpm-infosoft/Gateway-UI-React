@@ -1,8 +1,9 @@
-html,body {
+html,body,#root {
   margin: 0;
   font-family: Segoe UI, Verdana, Arial, sans-serif;
   background: #eee;
   overflow: hidden;
+  height: 100%;
 }
 .window-bar {
   height: 28px;
