@@ -38,6 +38,7 @@ export default function RegisterTable({
       <thead>
         <tr className="bg-zinc-800">
           <th className={thCls}>#</th>
+          <th className={`${thCls} text-center`}>En</th>
           <th className={thCls}>Name</th>
           <th className={thCls}>Start Addr</th>
           <th className={thCls}>Offset</th>
@@ -71,6 +72,18 @@ export default function RegisterTable({
             <tr key={i} className={`${rowBg} hover:bg-zinc-50/80 transition-colors group`}>
               {/* S.No */}
               <td className={`${tdCls} text-center text-slate-400 font-medium w-8`}>{i + 1}</td>
+
+              {/* Enable/Disable */}
+              <td className={`${tdCls} text-center`}>
+                <input
+                  type="checkbox"
+                  checked={r.enabled !== false}
+                  disabled={isReadOnly}
+                  onChange={(e) => onRowChange(i, "enabled", e.target.checked)}
+                  className="h-4 w-4 rounded accent-zinc-700 cursor-pointer disabled:cursor-not-allowed"
+                  title={r.enabled !== false ? "Disable register" : "Enable register"}
+                />
+              </td>
 
               {/* Name */}
               <td className={tdCls}>
@@ -387,20 +400,22 @@ export default function RegisterTable({
                 ) : null}
               </td>
 
-              {/* Alert Settings */}
+              {/* Alert Settings — hidden for write registers */}
               <td className={`${tdCls} text-center`}>
-                <button
-                  type="button"
-                  title="Alert Settings"
-                  onClick={() => onAlertOpen(i)}
-                  className={`inline-flex items-center justify-center p-1.5 rounded-md transition-colors ${
-                    hasAlert
-                      ? "bg-amber-100 text-amber-600 hover:bg-amber-200"
-                      : "text-slate-700 hover:text-amber-500 hover:bg-amber-50"
-                  }`}
-                >
-                  <Bell size={13} strokeWidth={hasAlert ? 2.5 : 1.5} />
-                </button>
+                {!isWrite && (
+                  <button
+                    type="button"
+                    title="Alert Settings"
+                    onClick={() => onAlertOpen(i)}
+                    className={`inline-flex items-center justify-center p-1.5 rounded-md transition-colors ${
+                      hasAlert
+                        ? "bg-amber-100 text-amber-600 hover:bg-amber-200"
+                        : "text-slate-700 hover:text-amber-500 hover:bg-amber-50"
+                    }`}
+                  >
+                    <Bell size={13} strokeWidth={hasAlert ? 2.5 : 1.5} />
+                  </button>
+                )}
               </td>
 
               {/* Remove */}

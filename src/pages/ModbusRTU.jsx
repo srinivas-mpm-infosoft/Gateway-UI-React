@@ -60,6 +60,7 @@ function normalizeRegisterRow(r) {
   // Derive mode from legacy read/write booleans if not already set
   const mode = r.mode ?? (r.write ? "write" : "read");
   return {
+    enabled: r.enabled !== undefined ? !!r.enabled : true,
     name: r.name ?? "",
     start: r.start ?? "",
     offset: r.offset ?? 0,
@@ -108,11 +109,19 @@ function normalizeRegisterRow(r) {
         action_type: a.action_type ?? "none",
         do_pin: a.do_pin ?? "",
         do_status: a.do_status ?? "High",
-        target_brand_key: a.target_brand_key ?? "",
-        target_slave_id: a.target_slave_id ?? "",
-        target_register_name: a.target_register_name ?? "",
-        write_value_pct: a.write_value_pct ?? "",
-        write_value_boolean: a.write_value_boolean ?? "true",
+        write_targets: (() => {
+          const mkT = (t) => ({
+            target_brand_key: t.target_brand_key ?? "",
+            target_slave_id: t.target_slave_id ?? "",
+            target_register_name: t.target_register_name ?? "",
+            write_value_pct: t.write_value_pct ?? "",
+            write_value_boolean: t.write_value_boolean ?? "true",
+          });
+          if (a.write_targets?.length) return a.write_targets.map(mkT);
+          // Migrate from old single-target fields
+          if (a.target_register_name) return [mkT(a)];
+          return [];
+        })(),
       });
       if (r.alerts?.length) return r.alerts.map(mk);
       // Migrate from previous conditions-array implementation
@@ -128,7 +137,6 @@ function normalizeRegisterRow(r) {
       if (ul !== "" && ul != null) migrated.push(mk({ ...base, tag: "Upper Limit", condition_type: "simple", operator: ">", limit: Number(ul), action_type: "none" }));
       return migrated;
     })(),
-    alert_allocated_to: r.alert_allocated_to ?? "",
   };
 }
 
@@ -459,27 +467,6 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
       const brand = next.ModbusRTU.Devices.brands[activeBrandKey];
       const key = String(activeSlaveId);
       const rowList = brand.registersBySlave[key] || [];
-      const currentRow = rowList[rowIdx];
-      const ownerKey = `${activeBrandKey}|${key}|${currentRow?.name ?? ""}`;
-
-      // Clear all previous write_register allocations owned by this row
-      const clearAlloc = (a) => {
-        if (a?.action_type === "write_register" && a.target_brand_key && a.target_register_name) {
-          const regs = next.ModbusRTU.Devices.brands[a.target_brand_key]?.registersBySlave?.[String(a.target_slave_id)] || [];
-          regs.forEach((reg) => { if (reg.name === a.target_register_name && reg.alert_allocated_to === ownerKey) reg.alert_allocated_to = ""; });
-        }
-      };
-      (currentRow?.alerts ?? []).forEach(clearAlloc);
-      clearAlloc(currentRow?.alert); // also clear any legacy single-alert allocation
-
-      // Set new allocations for all alerts in the new data
-      (data.alerts ?? []).forEach((a) => {
-        if (a.action_type === "write_register" && a.target_brand_key && a.target_slave_id && a.target_register_name) {
-          const regs = next.ModbusRTU.Devices.brands[a.target_brand_key]?.registersBySlave?.[String(a.target_slave_id)] || [];
-          regs.forEach((reg) => { if (reg.name === a.target_register_name) reg.alert_allocated_to = ownerKey; });
-        }
-      });
-
       rowList[rowIdx] = { ...rowList[rowIdx], alerts: data.alerts ?? [] };
       brand.registersBySlave[key] = rowList;
       return next;
@@ -961,7 +948,6 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
       {alertModal.open && (() => {
         const currentRow = rows[alertModal.rowIdx];
         const isWriteAlert = currentRow?.mode === "write" && currentRow?.write_mode === "alert";
-        const ownerKey = activeBrandKey ? `${activeBrandKey}|${activeSlaveId}|${currentRow?.name ?? ""}` : "";
 
         // Collect all Write+Alert registers across every brand/slave
         const allWriteAlertRegs = [];
@@ -971,7 +957,7 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
             (regs || []).forEach((reg) => {
               const n = normalizeRegisterRow(reg);
               if (n.mode === "write" && n.write_mode === "alert") {
-                allWriteAlertRegs.push({ brandKey: bk, brandLabel, slaveId, name: n.name || `Slave ${slaveId} Reg`, sql_type: n.sql_type, min: n.write_min_reg, max: n.write_max_reg, allocatedTo: n.alert_allocated_to ?? "" });
+                allWriteAlertRegs.push({ brandKey: bk, brandLabel, slaveId, name: n.name || `Slave ${slaveId} Reg`, sql_type: n.sql_type, min: n.write_min_reg, max: n.write_max_reg });
               }
             });
           });
@@ -984,7 +970,7 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
 
         const addAlert = () => setAlertModal((m) => ({
           ...m,
-          data: { ...m.data, alerts: [...(m.data.alerts ?? []), { tag: "Lower Limit", enabled: true, condition_type: "simple", operator: "<", limit: "", lower_op: "<", lower_value: "", upper_op: "<", upper_value: "", email: "", mobile: "", message: "", action_type: "none", do_pin: "", do_status: "High", target_brand_key: "", target_slave_id: "", target_register_name: "", write_value_pct: "", write_value_boolean: "true" }] },
+          data: { ...m.data, alerts: [...(m.data.alerts ?? []), { tag: "Lower Limit", enabled: true, condition_type: "simple", operator: "<", limit: "", lower_op: "<", lower_value: "", upper_op: "<", upper_value: "", email: "", mobile: "", message: "", action_type: "none", do_pin: "", do_status: "High", write_targets: [] }] },
         }));
         const updAlert = (ai, patch) => setAlertModal((m) => {
           const next = [...(m.data.alerts ?? [])];
@@ -1007,24 +993,17 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
                     <span className="text-[10px] font-semibold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">{allWriteAlertRegs.length}</span>
                   </div>
                   <div className="divide-y divide-amber-100 bg-white">
-                    {allWriteAlertRegs.map((wr, wi) => {
-                      const isTaken = wr.allocatedTo && wr.allocatedTo !== ownerKey;
-                      return (
-                        <div key={wi} className="flex items-center gap-3 px-4 py-2 text-xs">
-                          <span className={`font-semibold ${isTaken ? "line-through text-slate-400" : "text-slate-700"}`}>
-                            {wr.brandLabel} <span className="text-slate-400">›</span> Slave {wr.slaveId} <span className="text-slate-400">›</span> {wr.name}
-                          </span>
-                          <div className="ml-auto flex items-center gap-1.5 flex-shrink-0">
-                            <span className="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded text-[10px] font-mono">{wr.sql_type}</span>
-                            {(wr.min !== "" || wr.max !== "") && <span className="text-slate-400 text-[10px]">[{wr.min !== "" ? wr.min : "—"}–{wr.max !== "" ? wr.max : "—"}]</span>}
-                            {isTaken
-                              ? <span className="text-[10px] font-semibold text-rose-500 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded">In use</span>
-                              : <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">Free</span>
-                            }
-                          </div>
+                    {allWriteAlertRegs.map((wr, wi) => (
+                      <div key={wi} className="flex items-center gap-3 px-4 py-2 text-xs">
+                        <span className="font-semibold text-slate-700">
+                          {wr.brandLabel} <span className="text-slate-400">›</span> Slave {wr.slaveId} <span className="text-slate-400">›</span> {wr.name}
+                        </span>
+                        <div className="ml-auto flex items-center gap-1.5 flex-shrink-0">
+                          <span className="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded text-[10px] font-mono">{wr.sql_type}</span>
+                          {(wr.min !== "" || wr.max !== "") && <span className="text-slate-400 text-[10px]">[{wr.min !== "" ? wr.min : "—"}–{wr.max !== "" ? wr.max : "—"}]</span>}
                         </div>
-                      );
-                    })}
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
@@ -1063,11 +1042,6 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
                 {modalAlerts.map((a, ai) => {
                   const aType = a.action_type ?? "none";
                   const isEnabled = !!a.enabled;
-                  const availRegs = allWriteAlertRegs.filter((reg) => !reg.allocatedTo || reg.allocatedTo === ownerKey);
-                  const selReg = allWriteAlertRegs.find(
-                    (reg) => reg.brandKey === String(a.target_brand_key ?? "") && String(reg.slaveId) === String(a.target_slave_id ?? "") && reg.name === String(a.target_register_name ?? "")
-                  ) ?? null;
-                  const selIsBool = selReg?.sql_type === "BOOLEAN";
 
                   return (
                     <div key={ai} className={`rounded-2xl overflow-hidden shadow-sm border-2 transition-all ${isEnabled ? "border-zinc-300" : "border-slate-200 opacity-80"}`}>
@@ -1320,48 +1294,65 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
 
                           {/* Write Register sub-panel */}
                           {aType === "write_register" && (
-                            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-3">
-                              <div>
-                                <span className="text-[10px] text-slate-400 mb-1 block">Target Register</span>
-                                <div className="flex gap-2">
-                                  <select
-                                    value={`${a.target_brand_key ?? ""}|${a.target_slave_id ?? ""}|${a.target_register_name ?? ""}`}
-                                    onChange={(e) => {
-                                      const [bk, sid, rname] = e.target.value.split("|");
-                                      updAlert(ai, { target_brand_key: bk, target_slave_id: sid, target_register_name: rname, write_value_pct: "", write_value_boolean: "true" });
-                                    }}
-                                    className={`flex-1 ${sel}`}
-                                  >
-                                    <option value="||">— Select a register —</option>
-                                    {availRegs.map((reg, ri) => (
-                                      <option key={ri} value={`${reg.brandKey}|${reg.slaveId}|${reg.name}`}>
-                                        {reg.brandLabel} › Slave {reg.slaveId} › {reg.name} ({reg.sql_type}){reg.min !== "" || reg.max !== "" ? ` [${reg.min}–${reg.max}]` : ""}
-                                      </option>
-                                    ))}
-                                  </select>
-                                  {a.target_register_name && (
+                            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-2">
+                              {(a.write_targets ?? []).map((t, ti) => {
+                                const tReg = allWriteAlertRegs.find(
+                                  (r) => r.brandKey === String(t.target_brand_key ?? "") && String(r.slaveId) === String(t.target_slave_id ?? "") && r.name === String(t.target_register_name ?? "")
+                                ) ?? null;
+                                const tIsBool = tReg?.sql_type === "BOOLEAN";
+                                const updTarget = (patch) => updAlert(ai, {
+                                  write_targets: (a.write_targets ?? []).map((x, xi) => xi === ti ? { ...x, ...patch } : x),
+                                });
+                                return (
+                                  <div key={ti} className="flex items-start gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2">
+                                    <span className="text-[10px] font-bold text-slate-400 mt-2.5 w-4 flex-shrink-0">{ti + 1}</span>
+                                    <div className="flex-1 space-y-2">
+                                      <select
+                                        value={`${t.target_brand_key ?? ""}|${t.target_slave_id ?? ""}|${t.target_register_name ?? ""}`}
+                                        onChange={(e) => {
+                                          const [bk, sid, rname] = e.target.value.split("|");
+                                          updTarget({ target_brand_key: bk, target_slave_id: sid, target_register_name: rname, write_value_pct: "", write_value_boolean: "true" });
+                                        }}
+                                        className={`w-full ${sel}`}
+                                      >
+                                        <option value="||">— Select a register —</option>
+                                        {allWriteAlertRegs.map((reg, ri) => (
+                                          <option key={ri} value={`${reg.brandKey}|${reg.slaveId}|${reg.name}`}>
+                                            {reg.brandLabel} › Slave {reg.slaveId} › {reg.name} ({reg.sql_type}){reg.min !== "" || reg.max !== "" ? ` [${reg.min}–${reg.max}]` : ""}
+                                          </option>
+                                        ))}
+                                      </select>
+                                      {tReg && (
+                                        <div>
+                                          <span className="text-[10px] text-slate-400 mb-1 block">{tIsBool ? "Output Value" : "Write Value (%)"}</span>
+                                          {tIsBool ? (
+                                            <select value={t.write_value_boolean ?? "true"} onChange={(e) => updTarget({ write_value_boolean: e.target.value })} className={`${sel} w-full`}>
+                                              <option value="true">True</option><option value="false">False</option>
+                                            </select>
+                                          ) : (
+                                            <input type="number" min={0} max={100} placeholder="0 – 100"
+                                              value={t.write_value_pct ?? ""} onChange={(e) => updTarget({ write_value_pct: e.target.value })}
+                                              className={inp} />
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
                                     <button type="button"
-                                      onClick={() => updAlert(ai, { target_brand_key: "", target_slave_id: "", target_register_name: "", write_value_pct: "", write_value_boolean: "true" })}
-                                      className="flex-shrink-0 px-3 py-2 text-xs font-semibold text-red-500 border border-red-200 rounded-lg hover:bg-red-50 transition-colors">
-                                      Clear
+                                      onClick={() => updAlert(ai, { write_targets: (a.write_targets ?? []).filter((_, xi) => xi !== ti) })}
+                                      className="flex-shrink-0 mt-1.5 p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                                      title="Remove target">
+                                      <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                                        <line x1="1" y1="1" x2="11" y2="11" /><line x1="11" y1="1" x2="1" y2="11" />
+                                      </svg>
                                     </button>
-                                  )}
-                                </div>
-                              </div>
-                              {selReg && (
-                                <div>
-                                  <span className="text-[10px] text-slate-400 mb-1 block">{selIsBool ? "Output Value" : "Write Value (%)"}</span>
-                                  {selIsBool ? (
-                                    <select value={a.write_value_boolean ?? "true"} onChange={(e) => updAlert(ai, { write_value_boolean: e.target.value })} className={`${sel} w-full`}>
-                                      <option value="true">True</option><option value="false">False</option>
-                                    </select>
-                                  ) : (
-                                    <input type="number" min={0} max={100} placeholder="0 – 100"
-                                      value={a.write_value_pct ?? ""} onChange={(e) => updAlert(ai, { write_value_pct: e.target.value })}
-                                      className={inp} />
-                                  )}
-                                </div>
-                              )}
+                                  </div>
+                                );
+                              })}
+                              <button type="button"
+                                onClick={() => updAlert(ai, { write_targets: [...(a.write_targets ?? []), { target_brand_key: "", target_slave_id: "", target_register_name: "", write_value_pct: "", write_value_boolean: "true" }] })}
+                                className="w-full py-1.5 border border-dashed border-slate-300 rounded-lg text-xs font-semibold text-slate-500 hover:border-zinc-400 hover:text-zinc-700 hover:bg-white transition-colors">
+                                + Add Register
+                              </button>
                             </div>
                           )}
                         </div>
