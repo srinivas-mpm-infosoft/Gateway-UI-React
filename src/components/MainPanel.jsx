@@ -55,9 +55,9 @@ export default function MainPanel({ panel, user }) {
       )}
 
       {/* ── Other pages ── */}
-      {panel === "Wifi/4G" && <Wifi4G isReadOnly={isReadOnly} />}
-      {panel === "alarm" && <Alarm isReadOnly={isReadOnly} />}
-      {panel === "file-to-db" && <FileToDB isReadOnly={isReadOnly} />}
+      {/* {panel === "Wifi/4G" && <Wifi4G isReadOnly={isReadOnly} />} */}
+      {/* {panel === "alarm" && <Alarm isReadOnly={isReadOnly} />}
+      {panel === "file-to-db" && <FileToDB isReadOnly={isReadOnly} />} */}
 
       {panel === "database" && user?.role !== "user" && (
         <DatabasePage isReadOnly={isReadOnly} />
@@ -67,7 +67,7 @@ export default function MainPanel({ panel, user }) {
           Access denied: database view available for admin/superadmin.
         </div>
       )}
-
+{/* 
       {panel === "admin-settings" && user?.role !== "user" && (
         <AdminSettings isReadOnly={isReadOnly} />
       )}
@@ -75,7 +75,7 @@ export default function MainPanel({ panel, user }) {
         <div style={{ padding: 20, color: "#d32f2f" }}>
           Access denied: admin settings available for admin/superadmin.
         </div>
-      )}
+      )} */}
 
       {panel === "change-password" && <ChangePassword />}
       {panel === "add-user" && <AddUser currentRole={user?.role || "user"} />}

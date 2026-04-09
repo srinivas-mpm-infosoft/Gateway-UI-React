@@ -126,21 +126,21 @@ export default function IOSettings({ role = "admin", isReadOnly, subTab = "gener
                       label: "Modbus RTU Protocol",
                       checked: config.ioSettings?.settings?.modbus,
                     },
-                    {
-                      name: "modbusTCP",
-                      label: "Modbus TCP/IP Protocol",
-                      checked: config.ioSettings?.settings?.modbusTCP,
-                    },
-                    {
-                      name: "analog",
-                      label: "Analog Input/Output",
-                      checked: config.ioSettings?.settings?.analog,
-                    },
-                    {
-                      name: "digitalInput",
-                      label: "Digital Input/Output",
-                      checked: config.ioSettings?.settings?.digitalInput,
-                    },
+                    // {
+                    //   name: "modbusTCP",
+                    //   label: "Modbus TCP/IP Protocol",
+                    //   checked: config.ioSettings?.settings?.modbusTCP,
+                    // },
+                    // {
+                    //   name: "analog",
+                    //   label: "Analog Input/Output",
+                    //   checked: config.ioSettings?.settings?.analog,
+                    // },
+                    // {
+                    //   name: "digitalInput",
+                    //   label: "Digital Input/Output",
+                    //   checked: config.ioSettings?.settings?.digitalInput,
+                    // },
                   ].map((item) => (
                     <label
                       key={item.name}

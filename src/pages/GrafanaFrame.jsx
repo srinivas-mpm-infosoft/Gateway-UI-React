@@ -39,14 +39,14 @@ export default function GrafanaFrame() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-const handler = (event) => {
-  if (event.data?.type === "SET_THEME") {
-    console.log("THEME FROM GRAFANA:", event.data.theme);
+    const handler = (event) => {
+      if (event.data?.type === "SET_THEME") {
+        console.log("THEME FROM GRAFANA:", event.data.theme);
 
-    setLoading(true);
-    setTheme(event.data.theme);
-  }
-};
+        setLoading(true);
+        setTheme(event.data.theme);
+      }
+    };
 
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
@@ -55,7 +55,7 @@ const handler = (event) => {
   return (
     <iframe
       key={theme}
-      src={`http://10.42.0.183:3000/d/ad666l4/mixer-dashboard?kiosk&theme=${theme}`}
+      src={`http://10.42.0.183:3000/d/ad5hmlg/mixer-dashboard?kiosk&theme=light`}
       onLoad={() => setLoading(false)}
       style={{
         position: "fixed",

@@ -42,15 +42,15 @@ export default function RegisterTable({
           <th className={thCls}>Name</th>
           <th className={thCls}>Start Addr</th>
           <th className={thCls}>Offset</th>
-          <th className={thCls}>Mode</th>
-          <th className={thCls}>Register Type</th>
+          {/* <th className={thCls}>Mode</th> */}
+          {/* <th className={thCls}>Register Type</th> */}
           <th className={thCls}>Sensor Type</th>
           <th className={thCls}>Eng Symbol</th>
           <th className={thCls}>Elec. Range</th>
-          <th className={thCls}>Data Type</th>
+          {/* <th className={thCls}>Data Type</th> */}
           <th className={thCls}>Length</th>
-          <th className={thCls}>Multiply</th>
-          <th className={thCls}>Divide</th>
+          {/* <th className={thCls}>Multiply</th>
+          <th className={thCls}>Divide</th> */}
           {/* Read-only column */}
           <th className={thCls}>Process Range</th>
           {/* Write-only columns */}
@@ -122,7 +122,7 @@ export default function RegisterTable({
               </td>
 
               {/* Mode (Read / Write) */}
-              <td className={tdCls}>
+              {/* <td className={tdCls}>
                 <select
                   value={r.mode ?? "read"}
                   disabled={isReadOnly}
@@ -136,10 +136,10 @@ export default function RegisterTable({
                   <option value="read">Read</option>
                   <option value="write">Write</option>
                 </select>
-              </td>
+              </td> */}
 
               {/* Register Type */}
-              <td className={tdCls}>
+              {/* <td className={tdCls}>
                 <select
                   value={r.type ?? "Input Register"}
                   disabled={isReadOnly}
@@ -152,7 +152,7 @@ export default function RegisterTable({
                   <option>Holding Register</option>
                   <option>Input Register</option>
                 </select>
-              </td>
+              </td> */}
 
               {/* Sensor Type */}
               <td className={tdCls}>
@@ -212,7 +212,7 @@ export default function RegisterTable({
               </td>
 
               {/* Data Type (sql_type) */}
-              <td className={tdCls}>
+              {/* <td className={tdCls}>
                 <select
                   value={r.sql_type ?? "FLOAT"}
                   disabled={isReadOnly}
@@ -225,7 +225,7 @@ export default function RegisterTable({
                   <option>BIGINT</option>
                   <option>BOOLEAN</option>
                 </select>
-              </td>
+              </td> */}
 
               {/* Length */}
               <td className={tdCls}>
@@ -240,7 +240,7 @@ export default function RegisterTable({
               </td>
 
               {/* Multiply */}
-              <td className={tdCls}>
+              {/* <td className={tdCls}>
                 <input
                   type="number"
                   step="any"
@@ -250,10 +250,10 @@ export default function RegisterTable({
                   onChange={(e) => onRowChange(i, "multiply", parseFloat(e.target.value) || 1)}
                   className={inputCls}
                 />
-              </td>
+              </td> */}
 
               {/* Divide */}
-              <td className={tdCls}>
+              {/* <td className={tdCls}>
                 <input
                   type="number"
                   step="any"
@@ -263,7 +263,7 @@ export default function RegisterTable({
                   onChange={(e) => onRowChange(i, "divide", parseFloat(e.target.value) || 1)}
                   className={inputCls}
                 />
-              </td>
+              </td> */}
 
               {/* ── Process Range — only meaningful for Read rows ── */}
               <td className={tdCls}>
@@ -321,8 +321,8 @@ export default function RegisterTable({
                           className={selectCls}
                           style={{ width: 80 }}
                         >
-                          <option value="true">True</option>
-                          <option value="false">False</option>
+                          <option value="true">NO</option>
+                          <option value="false">NC</option>
                         </select>
                       ) : (
                         // Independent + FLOAT / INT / BIGINT : Min, Max, Write %

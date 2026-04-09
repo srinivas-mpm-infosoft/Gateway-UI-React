@@ -65,7 +65,7 @@ export default function DBSettings({ prefix, db, role, onChange }) {
           Cloud DB
         </label>
 
-        {isPrivilegedRole ? (
+        {/* {isPrivilegedRole ? (
           <>
             <label style={{ display: "flex", alignItems: "center", gap: 4 }}>
               <b>Database Name</b>
@@ -114,7 +114,7 @@ export default function DBSettings({ prefix, db, role, onChange }) {
             <input type="hidden" name={`${prefix}_db_name`} value={currentDb.db_name || "ifex_demo"} readOnly />
             <input type="hidden" name={`${prefix}_table_name`} value={currentDb.table_name || ""} readOnly />
           </>
-        )}
+        )} */}
       </div>
     </div>
   );

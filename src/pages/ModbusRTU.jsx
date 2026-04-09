@@ -34,6 +34,14 @@ function ensureBase(cfg) {
       if (!validIds.has(key)) delete brand.registersBySlave[key];
     });
   });
+  // Materialize all defaults into stored rows so dropdowns/checkboxes are
+  // always backed by a real value — prevents "phantom default" where the UI
+  // shows a ?? fallback but the stored value is undefined until onChange fires.
+  Object.values(next.ModbusRTU.Devices.brands || {}).forEach((brand) => {
+    Object.keys(brand.registersBySlave || {}).forEach((key) => {
+      brand.registersBySlave[key] = (brand.registersBySlave[key] || []).map(normalizeRegisterRow);
+    });
+  });
   return next;
 }
 
@@ -51,6 +59,7 @@ function normalizeSlave(s) {
     use_usb: s.use_usb ?? false,
     upload_local: s.upload_local ?? true,
     upload_cloud: s.upload_cloud ?? false,
+    generate_random: s.generate_random ?? false,
     db_name: s.db_name ?? "",
     table_name: s.table_name ?? "",
   };
@@ -93,36 +102,48 @@ function normalizeRegisterRow(r) {
     },
     // Multiple independent alerts — each has its own condition + notification + action
     alerts: (() => {
-      const mk = (a) => ({
-        tag: a.tag ?? "Lower Limit",
-        enabled: !!(a.enabled ?? true),
-        condition_type: a.condition_type ?? "simple",
-        operator: a.operator ?? "<",
-        limit: a.limit ?? "",
-        lower_op: a.lower_op ?? "",
-        lower_value: a.lower_value ?? "",
-        upper_op: a.upper_op ?? "",
-        upper_value: a.upper_value ?? "",
-        email: a.email ?? "",
-        mobile: a.mobile ?? "",
-        message: a.message ?? "",
-        action_type: a.action_type ?? "none",
-        do_pin: a.do_pin ?? "",
-        do_status: a.do_status ?? "High",
-        write_targets: (() => {
-          const mkT = (t) => ({
-            target_brand_key: t.target_brand_key ?? "",
-            target_slave_id: t.target_slave_id ?? "",
-            target_register_name: t.target_register_name ?? "",
-            write_value_pct: t.write_value_pct ?? "",
-            write_value_boolean: t.write_value_boolean ?? "true",
-          });
-          if (a.write_targets?.length) return a.write_targets.map(mkT);
-          // Migrate from old single-target fields
-          if (a.target_register_name) return [mkT(a)];
-          return [];
-        })(),
+      const mkT = (t) => ({
+        target_brand_key: t.target_brand_key ?? "",
+        target_slave_id: t.target_slave_id ?? "",
+        target_register_name: t.target_register_name ?? "",
+        write_value_pct: t.write_value_pct ?? "",
+        write_value_boolean: t.write_value_boolean ?? "true",
       });
+      const mk = (a) => {
+        const tag = a.tag ?? "Lower Limit";
+        const limit = a.limit ?? "";
+        const offset = a.offset ?? 0;
+        const resetOffset = a.reset_offset ?? 0;
+        const vwo = (limit !== "" && offset !== "") ? Number(limit) + Number(offset) : "";
+        const resetVal = limit !== "" ? Number(limit) + Number(resetOffset) : "";
+        return {
+          tag,
+          enabled: !!(a.enabled ?? true),
+          condition_type: "simple",
+          operator: a.operator ?? (tag === "Upper Limit" ? ">" : "<"),
+          limit,
+          offset,
+          value_with_offset: a.value_with_offset !== undefined ? a.value_with_offset : vwo,
+          reset_offset: resetOffset,
+          // reset condition stored in range fields; lower for LL, upper for UL
+          lower_op: ">",
+          lower_value: a.lower_value !== undefined && a.lower_value !== "" ? a.lower_value : (tag === "Lower Limit" ? resetVal : ""),
+          upper_op: "<",
+          upper_value: a.upper_value !== undefined && a.upper_value !== "" ? a.upper_value : (tag === "Upper Limit" ? resetVal : ""),
+          email: a.email ?? "",
+          mobile: a.mobile ?? "",
+          message: a.message ?? "",
+          action_type: a.action_type ?? "none",
+          do_pin: a.do_pin ?? "",
+          do_status: a.do_status ?? "High",
+          write_targets: (() => {
+            if (a.write_targets?.length) return a.write_targets.map(mkT);
+            if (a.target_register_name) return [mkT(a)];
+            return [];
+          })(),
+          reset_write_targets: (a.reset_write_targets ?? []).map(mkT),
+        };
+      };
       if (r.alerts?.length) return r.alerts.map(mk);
       // Migrate from previous conditions-array implementation
       if (r.alert?.conditions?.length) {
@@ -457,7 +478,15 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
   const openAlertModal = (rowIdx) => {
     const row = rows[rowIdx];
     if (!row) return;
-    setAlertModal({ open: true, rowIdx, data: { alerts: deepClone(row.alerts ?? []) } });
+    let alerts = deepClone(row.alerts ?? []);
+    if (row.sql_type === "BOOLEAN") {
+      // Ensure exactly one "True" and one "False" alert, preserving existing data
+      const mkBool = (tag) => ({ tag, enabled: true, condition_type: "boolean", operator: "", limit: "", lower_op: ">", lower_value: "", upper_op: "<", upper_value: "", email: "", mobile: "", message: "", action_type: "none", do_pin: "", do_status: "High", write_targets: [] });
+      const trueAlert = alerts.find((a) => a.tag === "True") ?? mkBool("True");
+      const falseAlert = alerts.find((a) => a.tag === "False") ?? mkBool("False");
+      alerts = [trueAlert, falseAlert];
+    }
+    setAlertModal({ open: true, rowIdx, data: { alerts } });
   };
 
   const saveAlertModal = () => {
@@ -761,7 +790,7 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
                 Slave {activeSlaveId} — Configuration
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                <label className="block">
+                {/* <label className="block">
                   <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Polling Interval</span>
                   <div className="flex mt-1.5 gap-2">
                     <input
@@ -781,8 +810,8 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
                       {["Sec", "Min", "Hour"].map((u) => <option key={u}>{u}</option>)}
                     </select>
                   </div>
-                </label>
-                <div className="flex flex-col justify-end gap-3 pb-1">
+                </label> */}
+                <div className="flex justify-end gap-3 pb-1">
                   <label className="flex items-center gap-2.5 text-sm text-slate-600 cursor-pointer">
                     <input
                       type="checkbox"
@@ -802,6 +831,16 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
                       className="h-4 w-4 rounded border-slate-300 accent-zinc-700"
                     />
                     <span className="font-medium">Use USB</span>
+                  </label>
+                  <label className="flex items-center gap-2.5 text-sm text-slate-600 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={!!slaveObj.generate_random}
+                      disabled={isReadOnly}
+                      onChange={(e) => updateSlave("generate_random", e.target.checked)}
+                      className="h-4 w-4 rounded border-slate-300 accent-zinc-700"
+                    />
+                    <span className="font-medium">Generate Random</span>
                   </label>
                 </div>
               </div>
@@ -950,6 +989,7 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
         const isWriteAlert = currentRow?.mode === "write" && currentRow?.write_mode === "alert";
 
         // Collect all Write+Alert registers across every brand/slave
+        const ownerKey = `${activeBrandKey}|${activeSlaveId}|${currentRow?.name ?? ""}`;
         const allWriteAlertRegs = [];
         Object.entries(localCfg.ModbusRTU.Devices.brands || {}).forEach(([bk, brandData]) => {
           const brandLabel = brandData.label || bk;
@@ -957,7 +997,7 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
             (regs || []).forEach((reg) => {
               const n = normalizeRegisterRow(reg);
               if (n.mode === "write" && n.write_mode === "alert") {
-                allWriteAlertRegs.push({ brandKey: bk, brandLabel, slaveId, name: n.name || `Slave ${slaveId} Reg`, sql_type: n.sql_type, min: n.write_min_reg, max: n.write_max_reg });
+                allWriteAlertRegs.push({ brandKey: bk, brandLabel, slaveId, name: n.name || `Slave ${slaveId} Reg`, sql_type: n.sql_type, min: n.write_min_reg, max: n.write_max_reg, alert_allocated_to: reg.alert_allocated_to ?? "" });
               }
             });
           });
@@ -968,13 +1008,52 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
         const sel = "border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-zinc-300 focus:border-zinc-500 text-slate-700 transition-all";
         const lbl = "text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 block";
 
+        const isBoolReg = currentRow?.sql_type === "BOOLEAN";
+        const pMin = currentRow?.process_min !== "" && currentRow?.process_min != null ? Number(currentRow.process_min) : undefined;
+        const pMax = currentRow?.process_max !== "" && currentRow?.process_max != null ? Number(currentRow.process_max) : undefined;
+
+        const mkBlankAlert = (tag = "Lower Limit") => ({
+          tag, enabled: true, condition_type: "simple",
+          operator: tag === "Upper Limit" ? ">" : "<",
+          limit: "", offset: 0, value_with_offset: "",
+          reset_offset: 0, lower_op: ">", lower_value: "", upper_op: "<", upper_value: "",
+          email: "", mobile: "", message: "",
+          action_type: "none", do_pin: "", do_status: "High",
+          write_targets: [], reset_write_targets: [],
+        });
         const addAlert = () => setAlertModal((m) => ({
           ...m,
-          data: { ...m.data, alerts: [...(m.data.alerts ?? []), { tag: "Lower Limit", enabled: true, condition_type: "simple", operator: "<", limit: "", lower_op: "<", lower_value: "", upper_op: "<", upper_value: "", email: "", mobile: "", message: "", action_type: "none", do_pin: "", do_status: "High", write_targets: [] }] },
+          data: { ...m.data, alerts: [...(m.data.alerts ?? []), mkBlankAlert()] },
         }));
         const updAlert = (ai, patch) => setAlertModal((m) => {
+          const prev = (m.data.alerts ?? [])[ai] ?? {};
+          const merged = { ...prev, ...patch };
+          // Auto-recompute value_with_offset when limit or offset changes
+          if ("limit" in patch || "offset" in patch) {
+            const l = merged.limit;
+            const o = merged.offset;
+            merged.value_with_offset = (l !== "" && o !== "") ? Number(l) + Number(o) : "";
+          }
+          // Auto-recompute reset range value when limit or reset_offset changes
+          if ("limit" in patch || "reset_offset" in patch) {
+            const l = merged.limit;
+            const ro = merged.reset_offset ?? 0;
+            const rv = l !== "" ? Number(l) + Number(ro) : "";
+            if (merged.tag === "Lower Limit") merged.lower_value = rv;
+            if (merged.tag === "Upper Limit") merged.upper_value = rv;
+          }
+          // Auto-fix operator when tag changes
+          if ("tag" in patch) {
+            merged.operator = patch.tag === "Upper Limit" ? (merged.operator === "<" || merged.operator === "<=" ? ">" : merged.operator) : (merged.operator === ">" || merged.operator === ">=" ? "<" : merged.operator);
+            // Re-assign reset values to correct field
+            const l = merged.limit;
+            const ro = merged.reset_offset ?? 0;
+            const rv = l !== "" ? Number(l) + Number(ro) : "";
+            merged.lower_value = patch.tag === "Lower Limit" ? rv : "";
+            merged.upper_value = patch.tag === "Upper Limit" ? rv : "";
+          }
           const next = [...(m.data.alerts ?? [])];
-          next[ai] = { ...next[ai], ...patch };
+          next[ai] = merged;
           return { ...m, data: { ...m.data, alerts: next } };
         });
         const remAlert = (ai) => setAlertModal((m) => ({ ...m, data: { ...m.data, alerts: (m.data.alerts ?? []).filter((_, i) => i !== ai) } }));
@@ -1019,20 +1098,22 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
 
               {/* ── Alerts list ── */}
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-700 uppercase tracking-widest">Alerts</span>
-                    {modalAlerts.length > 0 && (
-                      <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">{modalAlerts.length}</span>
-                    )}
+                {!isBoolReg && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-slate-700 uppercase tracking-widest">Alerts</span>
+                      {modalAlerts.length > 0 && (
+                        <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">{modalAlerts.length}</span>
+                      )}
+                    </div>
+                    <button type="button" onClick={addAlert}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg text-xs font-semibold transition-colors shadow-sm">
+                      + Add Alert
+                    </button>
                   </div>
-                  <button type="button" onClick={addAlert}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg text-xs font-semibold transition-colors shadow-sm">
-                    + Add Alert
-                  </button>
-                </div>
+                )}
 
-                {modalAlerts.length === 0 && (
+                {!isBoolReg && modalAlerts.length === 0 && (
                   <div className="text-center py-10 rounded-2xl border-2 border-dashed border-slate-200">
                     <p className="text-sm text-slate-400 font-medium">No alerts configured</p>
                     <p className="text-xs text-slate-300 mt-1">Click &quot;+ Add Alert&quot; to get started</p>
@@ -1042,47 +1123,246 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
                 {modalAlerts.map((a, ai) => {
                   const aType = a.action_type ?? "none";
                   const isEnabled = !!a.enabled;
+                  const boolColor = a.tag === "True" ? "bg-emerald-500" : "bg-rose-500";
+                  const boolBorder = a.tag === "True" ? (isEnabled ? "border-emerald-400" : "border-emerald-100") : (isEnabled ? "border-rose-400" : "border-rose-100");
+
+                  if (isBoolReg) {
+                    return (
+                      <div key={ai} className={`rounded-2xl overflow-hidden shadow-sm border-2 transition-all ${boolBorder}`}>
+                        {/* Boolean card header */}
+                        <div className={`flex items-center gap-3 px-4 py-3 ${isEnabled ? boolColor : "bg-slate-100"}`}>
+                          <label className="flex-shrink-0 cursor-pointer" title={isEnabled ? "Disable" : "Enable"}>
+                            <input type="checkbox" checked={isEnabled}
+                              onChange={(e) => updAlert(ai, { enabled: e.target.checked })}
+                              className="h-4 w-4 rounded cursor-pointer accent-white" />
+                          </label>
+                          <span className={`flex-1 text-sm font-bold tracking-wide ${isEnabled ? "text-white" : "text-slate-600"}`}>
+                            When {a.tag}
+                          </span>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${isEnabled ? "bg-white/20 text-white" : "bg-white text-slate-400 border border-slate-200"}`}>
+                            {a.tag === "True" ? "1 / ON" : "0 / OFF"}
+                          </span>
+                        </div>
+
+                        {/* Boolean card body — notification + action only */}
+                        <div className="px-4 py-4 space-y-4 bg-white">
+                          <div className="space-y-3">
+                            <span className={lbl}>Notification</span>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <span className="text-[10px] text-slate-400 mb-1 block">Email</span>
+                                <input type="email" placeholder="alerts@example.com"
+                                  value={a.email ?? ""} onChange={(e) => updAlert(ai, { email: e.target.value })}
+                                  className={inp} />
+                              </div>
+                              <div>
+                                <span className="text-[10px] text-slate-400 mb-1 block">Mobile</span>
+                                <input type="tel" placeholder="+91 98765 43210"
+                                  value={a.mobile ?? ""} onChange={(e) => updAlert(ai, { mobile: e.target.value })}
+                                  className={inp} />
+                              </div>
+                            </div>
+                            <div>
+                              <span className="text-[10px] text-slate-400 mb-1 block">Message</span>
+                              <input type="text" placeholder="Alert message…"
+                                value={a.message ?? ""} onChange={(e) => updAlert(ai, { message: e.target.value })}
+                                className={inp} />
+                            </div>
+                          </div>
+
+                          <div className="space-y-3">
+                            <span className={lbl}>Action on Trigger</span>
+                            <div className="flex rounded-xl border border-slate-200 overflow-hidden">
+                              <button type="button" onClick={() => updAlert(ai, { action_type: "none" })}
+                                className={`flex-1 py-2 text-xs font-semibold transition-colors ${aType === "none" ? "bg-zinc-800 text-white shadow-inner" : "bg-white text-slate-500 hover:bg-slate-50"}`}>
+                                None
+                              </button>
+                              {isSuperAdmin && (
+                                <button type="button" onClick={() => updAlert(ai, { action_type: "do_pin" })}
+                                  className={`flex-1 py-2 text-xs font-semibold border-l border-slate-200 transition-colors ${aType === "do_pin" ? "bg-zinc-800 text-white shadow-inner" : "bg-white text-slate-500 hover:bg-slate-50"}`}>
+                                  Digital Output
+                                </button>
+                              )}
+                              {allWriteAlertRegs.length > 0 && (
+                                <button type="button" onClick={() => updAlert(ai, { action_type: "write_register" })}
+                                  className={`flex-1 py-2 text-xs font-semibold border-l border-slate-200 transition-colors ${aType === "write_register" ? "bg-zinc-800 text-white shadow-inner" : "bg-white text-slate-500 hover:bg-slate-50"}`}>
+                                  Write Register
+                                </button>
+                              )}
+                            </div>
+                            {isSuperAdmin && aType === "do_pin" && (
+                              <div className="grid grid-cols-2 gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                <div>
+                                  <span className="text-[10px] text-slate-400 mb-1 block">Digital Output Pin</span>
+                                  <select value={a.do_pin ?? ""} onChange={(e) => updAlert(ai, { do_pin: e.target.value })} className={`${sel} w-full`}>
+                                    <option value="">— None —</option>
+                                    <option>DO1</option><option>DO2</option><option>DO3</option><option>DO4</option>
+                                  </select>
+                                </div>
+                                <div>
+                                  <span className="text-[10px] text-slate-400 mb-1 block">Status</span>
+                                  <select value={a.do_status ?? "High"} onChange={(e) => updAlert(ai, { do_status: e.target.value })} className={`${sel} w-full`}>
+                                    <option>High</option><option>Low</option>
+                                  </select>
+                                </div>
+                              </div>
+                            )}
+                            {aType === "write_register" && (
+                              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-2">
+                                {(a.write_targets ?? []).map((t, ti) => {
+                                  const tReg = allWriteAlertRegs.find(
+                                    (r) => r.brandKey === String(t.target_brand_key ?? "") && String(r.slaveId) === String(t.target_slave_id ?? "") && r.name === String(t.target_register_name ?? "")
+                                  ) ?? null;
+                                  const tIsBool = tReg?.sql_type === "BOOLEAN";
+                                  const updTarget = (patch) => updAlert(ai, {
+                                    write_targets: (a.write_targets ?? []).map((x, xi) => xi === ti ? { ...x, ...patch } : x),
+                                  });
+                                  return (
+                                    <div key={ti} className="flex items-start gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2">
+                                      <span className="text-[10px] font-bold text-slate-400 mt-2.5 w-4 flex-shrink-0">{ti + 1}</span>
+                                      <div className="flex-1 space-y-2">
+                                        <select
+                                          value={`${t.target_brand_key ?? ""}|${t.target_slave_id ?? ""}|${t.target_register_name ?? ""}`}
+                                          onChange={(e) => { const [bk, sid, rname] = e.target.value.split("|"); updTarget({ target_brand_key: bk, target_slave_id: sid, target_register_name: rname, write_value_pct: "", write_value_boolean: "true" }); }}
+                                          className={`w-full ${sel}`}>
+                                          <option value="||">— Select a register —</option>
+                                          {allWriteAlertRegs.map((reg, ri) => (
+                                            <option key={ri} value={`${reg.brandKey}|${reg.slaveId}|${reg.name}`}>
+                                              {reg.brandLabel} › Slave {reg.slaveId} › {reg.name} ({reg.sql_type}){reg.min !== "" || reg.max !== "" ? ` [${reg.min}–${reg.max}]` : ""}
+                                            </option>
+                                          ))}
+                                        </select>
+                                        {tReg && (
+                                          <div>
+                                            <span className="text-[10px] text-slate-400 mb-1 block">{tIsBool ? "Output Value" : "Write Value (%)"}</span>
+                                            {tIsBool ? (
+                                              <select value={t.write_value_boolean ?? "true"} onChange={(e) => updTarget({ write_value_boolean: e.target.value, write_value_pct: "" })} className={`${sel} w-full`}>
+                                                <option value="true">NO</option><option value="false">NC</option>
+                                              </select>
+                                            ) : (
+                                              <input type="number" min={0} max={100} placeholder="0 – 100"
+                                                value={t.write_value_pct ?? ""} onChange={(e) => updTarget({ write_value_pct: e.target.value, write_value_boolean: "" })}
+                                                className={inp} />
+                                            )}
+                                          </div>
+                                        )}
+                                      </div>
+                                      <button type="button"
+                                        onClick={() => updAlert(ai, { write_targets: (a.write_targets ?? []).filter((_, xi) => xi !== ti) })}
+                                        className="flex-shrink-0 mt-1.5 p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors">
+                                        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                                          <line x1="1" y1="1" x2="11" y2="11" /><line x1="11" y1="1" x2="1" y2="11" />
+                                        </svg>
+                                      </button>
+                                    </div>
+                                  );
+                                })}
+                                <button type="button"
+                                  onClick={() => updAlert(ai, { write_targets: [...(a.write_targets ?? []), { target_brand_key: "", target_slave_id: "", target_register_name: "", write_value_pct: "", write_value_boolean: "true" }] })}
+                                  className="w-full py-1.5 border border-dashed border-slate-300 rounded-lg text-xs font-semibold text-slate-500 hover:border-zinc-400 hover:text-zinc-700 hover:bg-white transition-colors">
+                                  + Add Register
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // Per-card derived values
+                  const isLL = a.tag === "Lower Limit";
+                  const isUL = a.tag === "Upper Limit";
+                  const simpleMin = pMin;
+                  const simpleMax = pMax;
+                  const resetDisplayVal = a.limit !== "" ? a.limit : "—";
+                  const resetComputedVal = a.limit !== "" && a.reset_offset != null ? Number(a.limit) + Number(a.reset_offset ?? 0) : "—";
+
+                  // Reusable write-targets renderer
+                  const renderWriteTargets = (targets, targetField) => (
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-2">
+                      {(targets ?? []).map((t, ti) => {
+                        const tReg = allWriteAlertRegs.find(
+                          (r) => r.brandKey === String(t.target_brand_key ?? "") && String(r.slaveId) === String(t.target_slave_id ?? "") && r.name === String(t.target_register_name ?? "")
+                        ) ?? null;
+                        const tIsBool = tReg?.sql_type === "BOOLEAN";
+                        const updT = (patch) => updAlert(ai, {
+                          [targetField]: (targets ?? []).map((x, xi) => xi === ti ? { ...x, ...patch } : x),
+                        });
+                        return (
+                          <div key={ti} className="flex items-start gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2">
+                            <span className="text-[10px] font-bold text-slate-400 mt-2.5 w-4 flex-shrink-0">{ti + 1}</span>
+                            <div className="flex-1 space-y-2">
+                              <select
+                                value={`${t.target_brand_key ?? ""}|${t.target_slave_id ?? ""}|${t.target_register_name ?? ""}`}
+                                onChange={(e) => { const [bk, sid, rname] = e.target.value.split("|"); updT({ target_brand_key: bk, target_slave_id: sid, target_register_name: rname, write_value_pct: "", write_value_boolean: "true" }); }}
+                                className={`w-full ${sel}`}>
+                                <option value="||">— Select a register —</option>
+                                {allWriteAlertRegs.map((reg, ri) => {
+                                  const isOwnedByMe = reg.alert_allocated_to === ownerKey;
+                                  const isTakenByOther = reg.alert_allocated_to && reg.alert_allocated_to !== ownerKey;
+                                  return (
+                                    <option key={ri} value={`${reg.brandKey}|${reg.slaveId}|${reg.name}`}
+                                      style={{ fontWeight: isOwnedByMe ? "bold" : "normal", color: isTakenByOther ? "#94a3b8" : undefined }}>
+                                      {isOwnedByMe ? "★ " : isTakenByOther ? "✗ " : ""}{reg.brandLabel} › Slave {reg.slaveId} › {reg.name} ({reg.sql_type}){reg.min !== "" || reg.max !== "" ? ` [${reg.min}–${reg.max}]` : ""}{isOwnedByMe ? " [This register]" : ""}
+                                    </option>
+                                  );
+                                })}
+                              </select>
+                              {tReg && (
+                                <div>
+                                  <span className="text-[10px] text-slate-400 mb-1 block">{tIsBool ? "Output Value" : "Write Value (%)"}</span>
+                                  {tIsBool ? (
+                                    <select value={t.write_value_boolean ?? "true"} onChange={(e) => updT({ write_value_boolean: e.target.value, write_value_pct: "" })} className={`${sel} w-full`}>
+                                      <option value="true">NO</option><option value="false">NC</option>
+                                    </select>
+                                  ) : (
+                                    <input type="number" min={0} max={100} placeholder="0 – 100"
+                                      value={t.write_value_pct ?? ""} onChange={(e) => updT({ write_value_pct: e.target.value, write_value_boolean: "" })}
+                                      className={inp} />
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                            <button type="button"
+                              onClick={() => updAlert(ai, { [targetField]: (targets ?? []).filter((_, xi) => xi !== ti) })}
+                              className="flex-shrink-0 mt-1.5 p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors">
+                              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                                <line x1="1" y1="1" x2="11" y2="11" /><line x1="11" y1="1" x2="1" y2="11" />
+                              </svg>
+                            </button>
+                          </div>
+                        );
+                      })}
+                      <button type="button"
+                        onClick={() => updAlert(ai, { [targetField]: [...(targets ?? []), { target_brand_key: "", target_slave_id: "", target_register_name: "", write_value_pct: "", write_value_boolean: "true" }] })}
+                        className="w-full py-1.5 border border-dashed border-slate-300 rounded-lg text-xs font-semibold text-slate-500 hover:border-zinc-400 hover:text-zinc-700 hover:bg-white transition-colors">
+                        + Add Register
+                      </button>
+                    </div>
+                  );
 
                   return (
                     <div key={ai} className={`rounded-2xl overflow-hidden shadow-sm border-2 transition-all ${isEnabled ? "border-zinc-300" : "border-slate-200 opacity-80"}`}>
 
                       {/* ── Card Header ── */}
-                      <div className={`flex items-center gap-3 px-4 py-3 ${isEnabled ? "bg-zinc-500" : "bg-slate-100 "}`}>
+                      <div className={`flex items-center gap-3 px-4 py-3 ${isEnabled ? "bg-zinc-500" : "bg-slate-100"}`}>
                         <label className="flex-shrink-0 cursor-pointer" title={isEnabled ? "Disable alert" : "Enable alert"}>
                           <input type="checkbox" checked={isEnabled}
                             onChange={(e) => updAlert(ai, { enabled: e.target.checked })}
                             className="h-4 w-4 rounded cursor-pointer accent-white" />
                         </label>
-
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${isEnabled ? "bg-white/20 text-white" : "bg-white text-slate-500 border border-slate-200"}`}>
                           #{ai + 1}
                         </span>
-
-                        {/* Tag — only shown for simple conditions; label shown for range */}
-                        {a.condition_type !== "range" ? (
-                          <div className="flex-1 min-w-0">
-                            <select value={a.tag ?? "Lower Limit"} onChange={(e) => updAlert(ai, { tag: e.target.value })}
-                              className="w-full rounded-lg px-3 py-1.5 text-sm font-semibold border border-slate-300 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-zinc-300 transition-all">
-                              <option value="Lower Limit">Lower Limit</option>
-                              <option value="Upper Limit">Upper Limit</option>
-                            </select>
-                          </div>
-                        ) : (
-                          <span className={`flex-1 text-sm font-semibold tracking-wide ${isEnabled ? "text-white" : "text-slate-600"}`}>
-                            Range Condition
-                          </span>
-                        )}
-
-                        {/* Condition type */}
-                        <div className="flex-shrink-0">
-                          <select value={a.condition_type ?? "simple"} onChange={(e) => updAlert(ai, { condition_type: e.target.value })}
-                            className="rounded-lg px-3 py-1.5 text-xs font-semibold border border-slate-300 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-zinc-300 transition-all">
-                            <option value="simple">Simple</option>
-                            <option value="range">Range</option>
+                        <div className="flex-1 min-w-0">
+                          <select value={a.tag ?? "Lower Limit"}
+                            onChange={(e) => updAlert(ai, { tag: e.target.value })}
+                            className="w-full rounded-lg px-3 py-1.5 text-sm font-semibold border border-slate-300 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-zinc-300 transition-all">
+                            <option value="Lower Limit">Lower Limit</option>
+                            <option value="Upper Limit">Upper Limit</option>
                           </select>
                         </div>
-
-                        {/* Remove */}
                         <button type="button" onClick={() => remAlert(ai)}
                           className={`flex-shrink-0 p-1.5 rounded-lg transition-colors ${isEnabled ? "hover:bg-white/20 text-white/60 hover:text-white" : "text-slate-400 hover:text-red-500 hover:bg-red-50"}`}
                           title="Remove alert">
@@ -1093,266 +1373,153 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
                       </div>
 
                       {/* ── Card Body ── */}
-                      <div className="px-4 py-4 space-y-4 bg-white">
+                      <div className="bg-white divide-y divide-slate-100">
 
-                        {/* Condition */}
-                        <div className="rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3">
-                          <span className={lbl}>Condition</span>
-                          {a.condition_type !== "range" ? (
-                            /* ── Simple: Value [op] [limit] ── */
+                        {/* ── Normal Condition ── */}
+                        <div className="px-4 py-4 space-y-4">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Normal Condition</span>
+
+                          <div className="rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 space-y-3">
+                            {/* Value op limit row */}
                             <div className="flex items-center gap-2">
                               <span className="flex-shrink-0 text-xs font-semibold text-slate-500 bg-white border border-slate-200 rounded-lg px-3 py-2">Value</span>
-                              <select value={a.operator ?? "<"} onChange={(e) => updAlert(ai, { operator: e.target.value })}
-                                className={`${sel} font-mono`}>
-                                <option value="<">&lt;</option>
-                                <option value="<=">&lt;=</option>
-                                <option value=">">&gt;</option>
-                                <option value=">=">&gt;=</option>
+                              <select value={a.operator ?? (isUL ? ">" : "<")} onChange={(e) => updAlert(ai, { operator: e.target.value })}
+                              >
+                                {isUL ? (
+                                  <><option value=">">&gt;</option><option value=">=">&gt;=</option></>
+                                ) : (
+                                  <><option value="<">&lt;</option><option value="<=">&lt;=</option></>
+                                )}
                               </select>
-                              <input type="number" placeholder="Enter limit value"
+                              <input type="number"
+                                placeholder={simpleMin != null && simpleMax != null ? `${simpleMin} – ${simpleMax}` : "Limit value"}
                                 value={a.limit ?? ""}
+                                min={simpleMin} max={simpleMax}
                                 onChange={(e) => updAlert(ai, { limit: e.target.value === "" ? "" : Number(e.target.value) })}
-                                className={inp} />
+                                className={`${inp} w-[10%]`} />
                             </div>
-                          ) : (
-                            /* ── Range: [lower] [op] Value [op] [upper] ── */
-                            // <div style={{ display: "grid", gridTemplateColumns: "1fr 72px 56px 72px 1fr", gap: "8px", alignItems: "end" }}>
-                            //   {/* Lower value */}
-                            //   <div>
-                            //     <p className="text-[10px] text-slate-400 mb-1">Lower</p>
-                            //     <input type="number" placeholder="e.g. 5"
-                            //       value={a.lower_value ?? ""}
-                            //       onChange={(e) => updAlert(ai, { lower_value: e.target.value === "" ? "" : Number(e.target.value) })}
-                            //       className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-zinc-300 text-slate-700 placeholder-slate-400" />
-                            //   </div>
-                            //   {/* Lower operator */}
-                            //   <div>
-                            //     <p className="text-[10px] text-slate-400 mb-1 text-center">op</p>
-                            //     <select value={a.lower_op ?? "<"} onChange={(e) => updAlert(ai, { lower_op: e.target.value })}
-                            //       className="w-full border border-slate-300 rounded-lg px-2 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-zinc-300 text-slate-700 font-mono text-center">
-                            //       <option value="<">&lt;</option>
-                            //       <option value="<=">&lt;=</option>
-                            //     </select>
-                            //   </div>
-                            //   {/* Value badge */}
-                            //   <div>
-                            //     <p className="text-[10px] text-slate-400 mb-1 text-center">reading</p>
-                            //     <div className="bg-zinc-800 text-white text-xs font-bold rounded-lg py-2 text-center tracking-wide">
-                            //       Val
-                            //     </div>
-                            //   </div>
-                            //   {/* Upper operator */}
-                            //   <div>
-                            //     <p className="text-[10px] text-slate-400 mb-1 text-center">op</p>
-                            //     <select value={a.upper_op ?? "<"} onChange={(e) => updAlert(ai, { upper_op: e.target.value })}
-                            //       className="w-full border border-slate-300 rounded-lg px-2 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-zinc-300 text-slate-700 font-mono text-center">
-                            //       <option value="<">&lt;</option>
-                            //       <option value="<=">&lt;=</option>
-                            //     </select>
-                            //   </div>
-                            //   {/* Upper value */}
-                            //   <div>
-                            //     <p className="text-[10px] text-slate-400 mb-1">Upper</p>
-                            //     <input type="number" placeholder="e.g. 10"
-                            //       value={a.upper_value ?? ""}
-                            //       onChange={(e) => updAlert(ai, { upper_value: e.target.value === "" ? "" : Number(e.target.value) })}
-                            //       className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-zinc-300 text-slate-700 placeholder-slate-400" />
-                            //   </div>
-                            // </div>
+                            {/* Offset row */}
+                            <div className="flex items-center gap-2">
+                              <span className="flex-shrink-0 text-xs font-semibold text-slate-500 bg-white border border-slate-200 rounded-lg px-3 py-2 w-[72px] text-center">Offset</span>
+                              <input type="number"
+                                placeholder="0"
+                                value={a.offset ?? ""}
+                                onChange={(e) => updAlert(ai, { offset: e.target.value === "" ? "" : Number(e.target.value) })}
+                                className={`${inp} flex-1`} />
+                              {a.limit !== "" && (
+                                <span className="text-[10px] text-slate-400 flex-shrink-0">
+                                  stored as <b className="text-slate-600">{a.value_with_offset !== "" ? a.value_with_offset : "—"}</b>
+                                </span>
+                              )}
+                            </div>
+                          </div>
 
-                            /* ── Range: [lower] [op] Value [op] [upper] ── */
-                            <div className="w-full">
-                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">
-                                Value Range Configuration
-                              </p>
-
-                              <div className="grid grid-cols-[1fr_auto_80px_auto_1fr] items-stretch w-full bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-
-                                {/* 1. Lower Value Cell */}
-                                <div className="flex items-center justify-center p-3 border-r border-slate-100 bg-white">
-                                  <input
-                                    type="number"
-                                    placeholder="Min"
-                                    value={a.lower_value ?? ""}
-                                    onChange={(e) => updAlert(ai, { lower_value: e.target.value === "" ? "" : Number(e.target.value) })}
-                                    className="w-full text-center text-sm font-semibold text-slate-700 placeholder-slate-300 outline-none border-none bg-transparent"
-                                  />
-                                </div>
-
-                                {/* 2. Lower Operator Cell */}
-                                <div className="flex items-center justify-center px-4 bg-slate-50/50 border-r border-slate-100">
-                                  <select
-                                    value={a.lower_op ?? "<"}
-                                    onChange={(e) => updAlert(ai, { lower_op: e.target.value })}
-                                    className="appearance-none bg-transparent text-slate-500 font-mono font-bold text-base cursor-pointer outline-none hover:text-zinc-800 transition-colors text-center"
-                                  >
-                                    <option value="<">&lt;</option>
-                                    <option value="<=">&le;</option>
-                                  </select>
-                                </div>
-
-                                {/* 3. Reading/Value Badge Cell */}
-                                <div className="flex flex-col items-center justify-center px-2 py-3 bg-slate-100/30 border-r border-slate-100 min-w-[100px]">
-                                  <div className="bg-zinc-800 text-white text-[10px] font-bold rounded-md px-3 py-1 shadow-sm ring-1 ring-zinc-900">
-                                    VALUE
-                                  </div>
-                                </div>
-
-                                {/* 4. Upper Operator Cell */}
-                                <div className="flex items-center justify-center px-4 bg-slate-50/50 border-r border-slate-100">
-                                  <select
-                                    value={a.upper_op ?? "<"}
-                                    onChange={(e) => updAlert(ai, { upper_op: e.target.value })}
-                                    className="appearance-none bg-transparent text-slate-500 font-mono font-bold text-base cursor-pointer outline-none hover:text-zinc-800 transition-colors text-center"
-                                  >
-                                    <option value="<">&lt;</option>
-                                    <option value="<=">&le;</option>
-                                  </select>
-                                </div>
-
-                                {/* 5. Upper Value Cell */}
-                                <div className="flex items-center justify-center p-3 bg-white">
-                                  <input
-                                    type="number"
-                                    placeholder="Max"
-                                    value={a.upper_value ?? ""}
-                                    onChange={(e) => updAlert(ai, { upper_value: e.target.value === "" ? "" : Number(e.target.value) })}
-                                    className="w-full text-center text-sm font-semibold text-slate-700 placeholder-slate-300 outline-none border-none bg-transparent"
-                                  />
-                                </div>
-
+                          {/* Notification */}
+                          <div className="space-y-3">
+                            <span className={lbl}>Notification</span>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <span className="text-[10px] text-slate-400 mb-1 block">Email</span>
+                                <input type="email" placeholder="alerts@example.com"
+                                  value={a.email ?? ""} onChange={(e) => updAlert(ai, { email: e.target.value })}
+                                  className={inp} />
+                              </div>
+                              <div>
+                                <span className="text-[10px] text-slate-400 mb-1 block">Mobile</span>
+                                <input type="tel" placeholder="+91 98765 43210"
+                                  value={a.mobile ?? ""} onChange={(e) => updAlert(ai, { mobile: e.target.value })}
+                                  className={inp} />
                               </div>
                             </div>
-                          )}
-                        </div>
-
-                        {/* Notification */}
-                        <div className="space-y-3">
-                          <span className={lbl}>Notification</span>
-                          <div className="grid grid-cols-2 gap-3">
                             <div>
-                              <span className="text-[10px] text-slate-400 mb-1 block">Email</span>
-                              <input type="email" placeholder="alerts@example.com"
-                                value={a.email ?? ""} onChange={(e) => updAlert(ai, { email: e.target.value })}
-                                className={inp} />
-                            </div>
-                            <div>
-                              <span className="text-[10px] text-slate-400 mb-1 block">Mobile</span>
-                              <input type="tel" placeholder="+91 98765 43210"
-                                value={a.mobile ?? ""} onChange={(e) => updAlert(ai, { mobile: e.target.value })}
+                              <span className="text-[10px] text-slate-400 mb-1 block">Message</span>
+                              <input type="text" placeholder="Alert message…"
+                                value={a.message ?? ""} onChange={(e) => updAlert(ai, { message: e.target.value })}
                                 className={inp} />
                             </div>
                           </div>
-                          <div>
-                            <span className="text-[10px] text-slate-400 mb-1 block">Message</span>
-                            <input type="text" placeholder="Alert message…"
-                              value={a.message ?? ""} onChange={(e) => updAlert(ai, { message: e.target.value })}
-                              className={inp} />
+
+                          {/* Normal Action */}
+                          <div className="space-y-3">
+                            <span className={lbl}>Action on Trigger</span>
+                            <div className="flex rounded-xl border border-slate-200 overflow-hidden">
+                              <button type="button" onClick={() => updAlert(ai, { action_type: "none" })}
+                                className={`flex-1 py-2 text-xs font-semibold transition-colors ${aType === "none" ? "bg-zinc-800 text-white shadow-inner" : "bg-white text-slate-500 hover:bg-slate-50"}`}>
+                                None
+                              </button>
+                              {isSuperAdmin && (
+                                <button type="button" onClick={() => updAlert(ai, { action_type: "do_pin" })}
+                                  className={`flex-1 py-2 text-xs font-semibold border-l border-slate-200 transition-colors ${aType === "do_pin" ? "bg-zinc-800 text-white shadow-inner" : "bg-white text-slate-500 hover:bg-slate-50"}`}>
+                                  Digital Output
+                                </button>
+                              )}
+                              {allWriteAlertRegs.length > 0 && (
+                                <button type="button" onClick={() => updAlert(ai, { action_type: "write_register" })}
+                                  className={`flex-1 py-2 text-xs font-semibold border-l border-slate-200 transition-colors ${aType === "write_register" ? "bg-zinc-800 text-white shadow-inner" : "bg-white text-slate-500 hover:bg-slate-50"}`}>
+                                  Write Register
+                                </button>
+                              )}
+                            </div>
+                            {isSuperAdmin && aType === "do_pin" && (
+                              <div className="grid grid-cols-2 gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                <div>
+                                  <span className="text-[10px] text-slate-400 mb-1 block">Digital Output Pin</span>
+                                  <select value={a.do_pin ?? ""} onChange={(e) => updAlert(ai, { do_pin: e.target.value })} className={`${sel} w-full`}>
+                                    <option value="">— None —</option>
+                                    <option>DO1</option><option>DO2</option><option>DO3</option><option>DO4</option>
+                                  </select>
+                                </div>
+                                <div>
+                                  <span className="text-[10px] text-slate-400 mb-1 block">Status</span>
+                                  <select value={a.do_status ?? "High"} onChange={(e) => updAlert(ai, { do_status: e.target.value })} className={`${sel} w-full`}>
+                                    <option>High</option><option>Low</option>
+                                  </select>
+                                </div>
+                              </div>
+                            )}
+                            {aType === "write_register" && renderWriteTargets(a.write_targets, "write_targets")}
                           </div>
                         </div>
 
-                        {/* Action — segmented button group */}
-                        <div className="space-y-3">
-                          <span className={lbl}>Action on Trigger</span>
-                          <div className="flex rounded-xl border border-slate-200 overflow-hidden">
-                            <button type="button" onClick={() => updAlert(ai, { action_type: "none" })}
-                              className={`flex-1 py-2 text-xs font-semibold transition-colors ${aType === "none" ? "bg-zinc-800 text-white shadow-inner" : "bg-white text-slate-500 hover:bg-slate-50"}`}>
-                              None
-                            </button>
-                            {isSuperAdmin && (
-                              <button type="button" onClick={() => updAlert(ai, { action_type: "do_pin" })}
-                                className={`flex-1 py-2 text-xs font-semibold border-l border-slate-200 transition-colors ${aType === "do_pin" ? "bg-zinc-800 text-white shadow-inner" : "bg-white text-slate-500 hover:bg-slate-50"}`}>
-                                Digital Output
-                              </button>
-                            )}
-                            {allWriteAlertRegs.length > 0 && (
-                              <button type="button" onClick={() => updAlert(ai, { action_type: "write_register" })}
-                                className={`flex-1 py-2 text-xs font-semibold border-l border-slate-200 transition-colors ${aType === "write_register" ? "bg-zinc-800 text-white shadow-inner" : "bg-white text-slate-500 hover:bg-slate-50"}`}>
-                                Write Register
-                              </button>
-                            )}
+                        {/* ── Reset Condition ── */}
+                        <div className="px-4 py-4 space-y-4">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Reset Condition</span>
+
+                          <div className="rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 space-y-3">
+                            {/* Limit display (read-only) */}
+                            <div className="flex items-center gap-2">
+                              <span className="flex-shrink-0 text-xs font-semibold text-slate-500 bg-white border border-slate-200 rounded-lg px-3 py-2">
+                                {isLL ? "Lower Limit" : "Upper Limit"}
+                              </span>
+                              <span className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-400 bg-slate-100 font-mono">
+                                {resetDisplayVal}
+                              </span>
+                              {/* <span className="text-[10px] text-slate-400 flex-shrink-0">
+                                op = &lt;
+                              </span> */}
+                            </div>
+                            {/* Reset offset row */}
+                            <div className="flex items-center gap-2">
+                              <span className="flex-shrink-0 text-xs font-semibold text-slate-500 bg-white border border-slate-200 rounded-lg px-3 py-2 w-[72px] text-center">Offset</span>
+                              <input type="number"
+                                placeholder="0"
+                                value={a.reset_offset ?? ""}
+                                onChange={(e) => updAlert(ai, { reset_offset: e.target.value === "" ? "" : Number(e.target.value) })}
+                                className={`${inp} flex-1`} />
+                              {a.limit !== "" && (
+                                <span className="text-[10px] text-slate-400 flex-shrink-0">
+                                  → <b className="text-slate-600">{resetComputedVal}</b>
+                                  {" "}({isLL ? "lower_value" : "upper_value"})
+                                </span>
+                              )}
+                            </div>
                           </div>
 
-                          {/* DO Pin sub-panel */}
-                          {isSuperAdmin && aType === "do_pin" && (
-                            <div className="grid grid-cols-2 gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
-                              <div>
-                                <span className="text-[10px] text-slate-400 mb-1 block">Digital Output Pin</span>
-                                <select value={a.do_pin ?? ""} onChange={(e) => updAlert(ai, { do_pin: e.target.value })} className={`${sel} w-full`}>
-                                  <option value="">— None —</option>
-                                  <option>DO1</option><option>DO2</option><option>DO3</option><option>DO4</option>
-                                </select>
-                              </div>
-                              <div>
-                                <span className="text-[10px] text-slate-400 mb-1 block">Status</span>
-                                <select value={a.do_status ?? "High"} onChange={(e) => updAlert(ai, { do_status: e.target.value })} className={`${sel} w-full`}>
-                                  <option>High</option><option>Low</option>
-                                </select>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Write Register sub-panel */}
-                          {aType === "write_register" && (
-                            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-2">
-                              {(a.write_targets ?? []).map((t, ti) => {
-                                const tReg = allWriteAlertRegs.find(
-                                  (r) => r.brandKey === String(t.target_brand_key ?? "") && String(r.slaveId) === String(t.target_slave_id ?? "") && r.name === String(t.target_register_name ?? "")
-                                ) ?? null;
-                                const tIsBool = tReg?.sql_type === "BOOLEAN";
-                                const updTarget = (patch) => updAlert(ai, {
-                                  write_targets: (a.write_targets ?? []).map((x, xi) => xi === ti ? { ...x, ...patch } : x),
-                                });
-                                return (
-                                  <div key={ti} className="flex items-start gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2">
-                                    <span className="text-[10px] font-bold text-slate-400 mt-2.5 w-4 flex-shrink-0">{ti + 1}</span>
-                                    <div className="flex-1 space-y-2">
-                                      <select
-                                        value={`${t.target_brand_key ?? ""}|${t.target_slave_id ?? ""}|${t.target_register_name ?? ""}`}
-                                        onChange={(e) => {
-                                          const [bk, sid, rname] = e.target.value.split("|");
-                                          updTarget({ target_brand_key: bk, target_slave_id: sid, target_register_name: rname, write_value_pct: "", write_value_boolean: "true" });
-                                        }}
-                                        className={`w-full ${sel}`}
-                                      >
-                                        <option value="||">— Select a register —</option>
-                                        {allWriteAlertRegs.map((reg, ri) => (
-                                          <option key={ri} value={`${reg.brandKey}|${reg.slaveId}|${reg.name}`}>
-                                            {reg.brandLabel} › Slave {reg.slaveId} › {reg.name} ({reg.sql_type}){reg.min !== "" || reg.max !== "" ? ` [${reg.min}–${reg.max}]` : ""}
-                                          </option>
-                                        ))}
-                                      </select>
-                                      {tReg && (
-                                        <div>
-                                          <span className="text-[10px] text-slate-400 mb-1 block">{tIsBool ? "Output Value" : "Write Value (%)"}</span>
-                                          {tIsBool ? (
-                                            <select value={t.write_value_boolean ?? "true"} onChange={(e) => updTarget({ write_value_boolean: e.target.value })} className={`${sel} w-full`}>
-                                              <option value="true">True</option><option value="false">False</option>
-                                            </select>
-                                          ) : (
-                                            <input type="number" min={0} max={100} placeholder="0 – 100"
-                                              value={t.write_value_pct ?? ""} onChange={(e) => updTarget({ write_value_pct: e.target.value })}
-                                              className={inp} />
-                                          )}
-                                        </div>
-                                      )}
-                                    </div>
-                                    <button type="button"
-                                      onClick={() => updAlert(ai, { write_targets: (a.write_targets ?? []).filter((_, xi) => xi !== ti) })}
-                                      className="flex-shrink-0 mt-1.5 p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                                      title="Remove target">
-                                      <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                                        <line x1="1" y1="1" x2="11" y2="11" /><line x1="11" y1="1" x2="1" y2="11" />
-                                      </svg>
-                                    </button>
-                                  </div>
-                                );
-                              })}
-                              <button type="button"
-                                onClick={() => updAlert(ai, { write_targets: [...(a.write_targets ?? []), { target_brand_key: "", target_slave_id: "", target_register_name: "", write_value_pct: "", write_value_boolean: "true" }] })}
-                                className="w-full py-1.5 border border-dashed border-slate-300 rounded-lg text-xs font-semibold text-slate-500 hover:border-zinc-400 hover:text-zinc-700 hover:bg-white transition-colors">
-                                + Add Register
-                              </button>
+                          {/* Reset Write Registers */}
+                          {allWriteAlertRegs.length > 0 && (
+                            <div className="space-y-2">
+                              <span className={lbl}>Reset Write Registers</span>
+                              {renderWriteTargets(a.reset_write_targets, "reset_write_targets")}
                             </div>
                           )}
                         </div>

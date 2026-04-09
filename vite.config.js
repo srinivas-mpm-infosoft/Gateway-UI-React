@@ -3,7 +3,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
-const targetUrl = 'http://192.168.0.128:8000';
+const targetUrl = 'http://10.42.0.183:8000';
 
 // const targetUrl = 'http://localhost:8000';
 
