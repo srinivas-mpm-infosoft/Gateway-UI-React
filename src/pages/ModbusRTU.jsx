@@ -1532,7 +1532,7 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
 
             </div>
             <div className="flex gap-3 mt-6 pt-4 border-t border-slate-100">
-              <button onClick={saveAlertModal} className="flex-1 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm">Save Alerts</button>
+              <button onClick={saveAlertModal} className="flex-1 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm">Okay</button>
               <button onClick={() => setAlertModal({ open: false, rowIdx: -1, data: {} })} className="px-8 py-2.5 border border-slate-200 hover:bg-slate-50 rounded-xl text-sm font-medium text-slate-600 transition-colors">Cancel</button>
             </div>
           </Modal>

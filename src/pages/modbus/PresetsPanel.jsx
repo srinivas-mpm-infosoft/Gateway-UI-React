@@ -129,7 +129,7 @@ export default function PresetsPanel({
         </select>
 
         <button disabled={isReadOnly} onClick={() => setShowSaveModal(true)} className={btnOutline}>
-          Save as Preset
+          Okay
         </button>
 
         <span className="w-px h-5 bg-slate-200 mx-1 flex-shrink-0" />
@@ -168,7 +168,7 @@ export default function PresetsPanel({
           </p>
           <div className="flex gap-2 pt-2 border-t border-slate-100">
             <button onClick={confirmSave} disabled={!presetName.trim()} className="flex-1 py-2 rounded-md text-sm font-medium text-white bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40">
-              Save
+              Okay
             </button>
             <button onClick={() => { setShowSaveModal(false); setPresetName(""); }}
               className="flex-1 py-2 border border-slate-200 rounded-md text-sm font-medium text-slate-600 hover:bg-slate-50">
