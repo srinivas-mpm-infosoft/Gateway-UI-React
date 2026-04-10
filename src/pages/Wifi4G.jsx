@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { 
-  Wifi, 
-  Rss, 
-  Network as EthernetIcon, 
-  Save, 
-  CheckCircle, 
-  AlertCircle, 
-  Loader2, 
-  Globe 
+import {
+  Wifi,
+  Rss,
+  Network as EthernetIcon,
+  Save,
+  CheckCircle,
+  AlertCircle,
+  Loader2,
+  Globe
 } from "lucide-react";
 
 
@@ -127,11 +127,10 @@ export default function Wifi4G() {
                 <button
                   key={t.id}
                   onClick={() => { setTab(t.id); setStatus({ msg: "", type: "" }); }}
-                  className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-all ${
-                    tab === t.id
-                      ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
-                      : "text-slate-600 hover:bg-slate-100"
-                  }`}
+                  className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-all ${tab === t.id
+                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
+                    : "text-slate-600 hover:bg-slate-100"
+                    }`}
                 >
                   <Icon size={18} />
                   {t.label}

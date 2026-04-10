@@ -96,7 +96,7 @@ export default function DatabasePage() {
       }
     } catch (err) {
       setStatus({ message: "Network error. Please try again.", type: "error" });
-        showToast("Network error. Please try again.", "error");
+      showToast("Network error. Please try again.", "error");
     } finally {
       setSaving(false);
     }
@@ -129,7 +129,7 @@ export default function DatabasePage() {
         </button>
       </div>
 
-  
+
 
       {/* Configuration Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -145,14 +145,14 @@ export default function DatabasePage() {
                   </div>
                   <h3 className="font-bold text-slate-800 uppercase tracking-tight">{name} Database</h3>
                 </div>
-                
+
                 {/* Toggle Switch */}
                 <label className="relative inline-flex items-center cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    className="sr-only peer" 
-                    checked={isEnabled} 
-                    onChange={() => toggleEnabled(name)} 
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={isEnabled}
+                    onChange={() => toggleEnabled(name)}
                   />
                   <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-100 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
                 </label>

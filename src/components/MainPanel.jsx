@@ -10,13 +10,13 @@ import { useState } from "react";
 
 // Map panel IDs that belong to IO Settings → their subTab value
 const IO_SUB_TAB_MAP = {
-  "io-general":     "general",
-  "io-analog":      "analog",
-  "io-digital":     "digital",
-  "io-modbus-rtu":  "modbus-rtu",
-  "io-modbus-tcp":  "modbus-tcp",
+  "io-general": "general",
+  "io-analog": "analog",
+  "io-digital": "digital",
+  "io-modbus-rtu": "modbus-rtu",
+  "io-modbus-tcp": "modbus-tcp",
   // legacy alias
-  "io-settings":    "general",
+  "io-settings": "general",
 };
 
 export default function MainPanel({ panel, user }) {
@@ -67,7 +67,7 @@ export default function MainPanel({ panel, user }) {
           Access denied: database view available for admin/superadmin.
         </div>
       )}
-{/* 
+      {/* 
       {panel === "admin-settings" && user?.role !== "user" && (
         <AdminSettings isReadOnly={isReadOnly} />
       )}

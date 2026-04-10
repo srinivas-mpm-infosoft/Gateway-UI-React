@@ -55,7 +55,7 @@ export default function GrafanaFrame() {
   return (
     <iframe
       key={theme}
-      src={`http://10.42.0.183:3000/d/ad5hmlg/mixer-dashboard?kiosk&theme=light`}
+      src={`http://localhost:3000/d/ad5hmlg/mixer-dashboard?kiosk&theme=light`}
       onLoad={() => setLoading(false)}
       style={{
         position: "fixed",

@@ -51,35 +51,35 @@ export default function App() {
     return <Login />;
   }
 
-return (
-  // <Router>
-  // <Routes>
-  //   <Route path="/user" element={<div>{JSON.stringify(user)}</div>} /> // just print the User variable details
-  // </Routes>
+  return (
+    // <Router>
+    // <Routes>
+    //   <Route path="/user" element={<div>{JSON.stringify(user)}</div>} /> // just print the User variable details
+    // </Routes>
     // </Router>
-  <ToastProvider>
-  <div className="flex flex-col h-screen overflow-hidden bg-[#dfe3ea]">
-    {/* Top Bar - Fixed height, won't scroll */}
-    <div className="flex-shrink-0">
-      <WindowBar />
-    </div>
+    <ToastProvider>
+      <div className="flex flex-col h-screen overflow-hidden bg-[#dfe3ea]">
+        {/* Top Bar - Fixed height, won't scroll */}
+        <div className="flex-shrink-0">
+          <WindowBar />
+        </div>
 
-    {/* Body Area - Takes remaining height */}
-    <div className="flex flex-1 overflow-hidden">
-      
-      {/* Sidebar - Fixed width, won't scroll with content */}
-      <div className="flex-shrink-0">
-        <Sidebar active={activePanel} onSelect={setActivePanel} role={user?.role} />
+        {/* Body Area - Takes remaining height */}
+        <div className="flex flex-1 overflow-hidden">
+
+          {/* Sidebar - Fixed width, won't scroll with content */}
+          <div className="flex-shrink-0">
+            <Sidebar active={activePanel} onSelect={setActivePanel} role={user?.role} />
+          </div>
+
+          {/* Main Content - THIS is the only part that scrolls */}
+          <main className="flex-1 overflow-y-auto bg-slate-50">
+            <MainPanel panel={activePanel} user={user} />
+          </main>
+
+        </div>
       </div>
+    </ToastProvider>
 
-      {/* Main Content - THIS is the only part that scrolls */}
-      <main className="flex-1 overflow-y-auto bg-slate-50">
-        <MainPanel panel={activePanel} user={user} />
-      </main>
-
-    </div>
-  </div>
-  </ToastProvider>
-
-);
+  );
 }

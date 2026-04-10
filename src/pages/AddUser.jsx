@@ -32,7 +32,7 @@ export default function AddUser({ currentRole = "superadmin" }) {
         body: JSON.stringify({ username, password, role }),
       });
       const data = await res.json();
-      
+
       if (!res.ok) {
         showToast(data.error || "Failed to create user", "error");
         return;
@@ -134,7 +134,7 @@ export default function AddUser({ currentRole = "superadmin" }) {
                 {isPending ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
                 {isPending ? "Creating..." : "Save User"}
               </button>
-              
+
               <button
                 type="button"
                 onClick={() => {
