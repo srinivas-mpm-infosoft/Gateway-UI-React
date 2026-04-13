@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-
+import logo from "../assets/apple-touch-icon.png";
 export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -98,8 +98,7 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center font-[Frutiger] text-[#1f2937] bg-[radial-gradient(1200px_700px_at_50%_30%,#ffffff_0%,#e9edf3_40%,#dfe3ea_60%,#cfd6e2_78%,#c7cedc_100%),linear-gradient(135deg,#f5f7fb_0%,#6ec522_40%,#dbe2ee_100%)] bg-fixed">
       <div className="w-[min(550px,92vw)] bg-white rounded-[12px] shadow-[0_10px_30px_rgba(0,0,0,0.18)] px-[22px] py-[36px] sm:px-[56px] sm:py-[10px] text-center transition-all duration-150">
-
-        <h2 className="text-[36px] font-bold text-[#111827] mb-[26px] tracking-[0.2px] pt-[12%]">
+        <img src={logo} alt="logo" className="w-48 relative top-1/2 left-1/2 -translate-x-1/2  "/>        <h2 className="text-[36px] font-bold text-[#111827] mb-[26px] tracking-[0.2px] ">
           Gateway Login
         </h2>
 

@@ -8,7 +8,7 @@ import React from "react";
  * Uncontrolled mode (legacy): omit `onChange` – inputs use defaultChecked /
  *   defaultValue and expose html name attributes for FormData reading.
  */
-export default function DBSettings({ prefix, db, role, onChange }) {
+export default function DBSettings({ prefix, db, role, onChange, isReadOnly = false }) {
   const currentDb = db || {
     upload_local: true,
     upload_cloud: false,
@@ -36,6 +36,7 @@ export default function DBSettings({ prefix, db, role, onChange }) {
             <input
               type="checkbox"
               checked={!!currentDb.upload_local}
+              disabled={isReadOnly}
               onChange={(e) => onChange("upload_local", e.target.checked)}
             />
           ) : (
@@ -43,6 +44,7 @@ export default function DBSettings({ prefix, db, role, onChange }) {
               type="checkbox"
               name={`${prefix}_upload_local`}
               defaultChecked={!!currentDb.upload_local}
+              disabled={isReadOnly}
             />
           )}
           Local DB
@@ -53,6 +55,7 @@ export default function DBSettings({ prefix, db, role, onChange }) {
             <input
               type="checkbox"
               checked={!!currentDb.upload_cloud}
+              disabled={isReadOnly}
               onChange={(e) => onChange("upload_cloud", e.target.checked)}
             />
           ) : (
@@ -60,6 +63,7 @@ export default function DBSettings({ prefix, db, role, onChange }) {
               type="checkbox"
               name={`${prefix}_upload_cloud`}
               defaultChecked={!!currentDb.upload_cloud}
+              disabled={isReadOnly}
             />
           )}
           Cloud DB

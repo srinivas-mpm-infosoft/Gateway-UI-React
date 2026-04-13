@@ -27,7 +27,7 @@ const defaultNetwork = {
   static2: { iface: "eth1", enabled: false, ip: "", subnet: "", gateway: "", dns_primary: "", dns_secondary: "" },
 };
 
-export default function Wifi4G() {
+export default function Wifi4G({ isReadOnly = false }) {
   const [network, setNetwork] = useState(defaultNetwork);
   const [tab, setTab] = useState("wifi");
   const [status, setStatus] = useState({ msg: "", type: "" });
@@ -154,8 +154,9 @@ export default function Wifi4G() {
                       <label className="text-xs font-bold text-slate-500 uppercase">Network SSID</label>
                       <input
                         value={network.wifi.ssid}
+                        disabled={isReadOnly}
                         onChange={(e) => updateNetwork("wifi.ssid", e.target.value)}
-                        className="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                        className="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
                         placeholder="Enter SSID"
                       />
                     </div>
@@ -164,8 +165,9 @@ export default function Wifi4G() {
                       <input
                         type="password"
                         value={network.wifi.password}
+                        disabled={isReadOnly}
                         onChange={(e) => updateNetwork("wifi.password", e.target.value)}
-                        className="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                        className="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
                         placeholder="••••••••"
                       />
                     </div>
@@ -182,8 +184,9 @@ export default function Wifi4G() {
                       <label className="text-xs font-bold text-slate-500 uppercase">Service Provider</label>
                       <select
                         value={network.sim4g.provider}
+                        disabled={isReadOnly}
                         onChange={(e) => updateApnForProvider(e.target.value)}
-                        className="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                        className="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
                       >
                         <option value="">Select provider</option>
                         {Object.keys(APN_MAP).map((p) => (
@@ -198,7 +201,7 @@ export default function Wifi4G() {
                         <input
                           value={network.sim4g.apn}
                           onChange={(e) => updateNetwork("sim4g.apn", e.target.value)}
-                          disabled={network.sim4g.provider !== "other" && network.sim4g.provider !== ""}
+                          disabled={isReadOnly || (network.sim4g.provider !== "other" && network.sim4g.provider !== "")}
                           className="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
                         />
                         <Globe size={16} className="absolute right-3 top-3 text-slate-400" />
@@ -219,6 +222,7 @@ export default function Wifi4G() {
                       <input
                         type="checkbox"
                         checked={network[tab].enabled}
+                        disabled={isReadOnly}
                         onChange={(e) => updateNetwork(`${tab}.enabled`, e.target.checked)}
                         className="sr-only peer"
                       />
@@ -239,8 +243,9 @@ export default function Wifi4G() {
                         <label className="text-xs font-bold text-slate-500 uppercase ml-1">{f.label}</label>
                         <input
                           value={network[tab][f.key]}
+                          disabled={isReadOnly}
                           onChange={(e) => updateNetwork(`${tab}.${f.key}`, e.target.value)}
-                          className="w-full px-4 py-2 mt-1 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                          className="w-full px-4 py-2 mt-1 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
                         />
                       </div>
                     ))}
@@ -251,9 +256,9 @@ export default function Wifi4G() {
               {/* Universal Save Button */}
               <div className="mt-10 pt-6 border-t border-slate-100">
                 <button
-                  className="flex items-center justify-center gap-2 px-8 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition-all w-full md:w-auto"
+                  className="flex items-center justify-center gap-2 px-8 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition-all w-full md:w-auto disabled:opacity-70"
                   onClick={() => saveNetwork(network)}
-                  disabled={isSaving}
+                  disabled={isSaving || isReadOnly}
                 >
                   {isSaving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
                   {isSaving ? "Saving..." : "Save Configuration"}

@@ -13,7 +13,7 @@ const defaultDatabase = {
   },
 };
 
-export default function DatabasePage() {
+export default function DatabasePage({ isReadOnly = false }) {
   const [config, setConfig] = useState(null);
   const [database, setDatabase] = useState(defaultDatabase);
   const [loading, setLoading] = useState(true);
@@ -121,7 +121,7 @@ export default function DatabasePage() {
         </div>
         <button
           onClick={saveDatabaseConfig}
-          disabled={saving}
+          disabled={saving || isReadOnly}
           className="inline-flex items-center justify-center px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-medium rounded-lg transition-colors shadow-sm gap-2"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
@@ -152,6 +152,7 @@ export default function DatabasePage() {
                     type="checkbox"
                     className="sr-only peer"
                     checked={isEnabled}
+                    disabled={isReadOnly}
                     onChange={() => toggleEnabled(name)}
                   />
                   <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-100 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
@@ -167,7 +168,7 @@ export default function DatabasePage() {
                         {key}
                       </label>
                       <input
-                        disabled={!isEnabled}
+                        disabled={!isEnabled || isReadOnly}
                         type={key === "password" ? "password" : "text"}
                         value={val}
                         onChange={(e) => updateCred(name, key, e.target.value)}

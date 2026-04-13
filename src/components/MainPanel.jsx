@@ -55,9 +55,9 @@ export default function MainPanel({ panel, user }) {
       )}
 
       {/* ── Other pages ── */}
-      {/* {panel === "Wifi/4G" && <Wifi4G isReadOnly={isReadOnly} />} */}
-      {/* {panel === "alarm" && <Alarm isReadOnly={isReadOnly} />}
-      {panel === "file-to-db" && <FileToDB isReadOnly={isReadOnly} />} */}
+      {panel === "Wifi/4G" && <Wifi4G isReadOnly={isReadOnly} />}
+      {panel === "alarm" && <Alarm isReadOnly={isReadOnly} />}
+      {panel === "file-to-db" && <FileToDB isReadOnly={isReadOnly} />}
 
       {panel === "database" && user?.role !== "user" && (
         <DatabasePage isReadOnly={isReadOnly} />
@@ -89,7 +89,9 @@ export default function MainPanel({ panel, user }) {
         panel !== "admin-settings" &&
         panel !== "change-password" &&
         panel !== "add-user" &&
-        panel !== "logout" && <div style={{ padding: 20 }}>Page not found</div>}
+        panel !== "logout" && (
+          <div style={{ padding: 20 }}>Page not found</div>
+        )}
     </main>
   );
 }

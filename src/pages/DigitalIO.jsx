@@ -27,7 +27,7 @@ const defaultRelay = {
   channels: [{ name: "R1", enabled: false, pin: "", mode: "NO" }],
 };
 
-export default function DigitalIO({ config, onSave }) {
+export default function DigitalIO({ config, onSave, isReadOnly = false }) {
   const [di, setDi] = useState(defaultDigital);
   const [doo, setDoo] = useState(defaultDigitalOutput);
   const [relay, setRelay] = useState(defaultRelay);
@@ -116,6 +116,7 @@ export default function DigitalIO({ config, onSave }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (isReadOnly) return;
     const fd = new FormData(e.target);
     const newConfig = JSON.parse(JSON.stringify(config));
 
@@ -152,6 +153,7 @@ export default function DigitalIO({ config, onSave }) {
           type="number"
           min={1}
           value={di.pollingInterval}
+          disabled={isReadOnly}
           onChange={(e) => setDi((prev) => ({ ...prev, pollingInterval: Number(e.target.value) }))}
           style={{ width: 70, marginLeft: 6 }}
         />
@@ -160,6 +162,7 @@ export default function DigitalIO({ config, onSave }) {
         <select
           name="digitalIntervalUnit"
           value={di.pollingIntervalUnit}
+          disabled={isReadOnly}
           onChange={(e) => setDi((prev) => ({ ...prev, pollingIntervalUnit: e.target.value }))}
         >
           <option value="Sec">Sec</option>
@@ -186,6 +189,7 @@ export default function DigitalIO({ config, onSave }) {
                 <input
                   name={`di_name_${i}`}
                   value={ch.name}
+                  disabled={isReadOnly}
                   onChange={(e) => updateDIChannel(i, { name: e.target.value })}
                 />
               </td>
@@ -194,6 +198,7 @@ export default function DigitalIO({ config, onSave }) {
                   name={`di_pin_${i}`}
                   value={ch.pin}
                   placeholder="GPIO"
+                  disabled={isReadOnly}
                   onChange={(e) => updateDIChannel(i, { pin: e.target.value })}
                 />
               </td>
@@ -202,11 +207,12 @@ export default function DigitalIO({ config, onSave }) {
                   type="checkbox"
                   name={`di_enable_${i}`}
                   checked={ch.enabled}
+                  disabled={isReadOnly}
                   onChange={(e) => updateDIChannel(i, { enabled: e.target.checked })}
                 />
               </td>
               <td>
-                <button type="button" onClick={() => removeDI(i)}>
+                <button type="button" disabled={isReadOnly} onClick={() => removeDI(i)}>
                   ✕
                 </button>
               </td>
@@ -214,7 +220,7 @@ export default function DigitalIO({ config, onSave }) {
           ))}
         </tbody>
       </table>
-      <button type="button" className="button-primary" onClick={addDI}>
+      <button type="button" className="button-primary" disabled={isReadOnly} onClick={addDI}>
         + Add Digital Input
       </button>
 
@@ -237,6 +243,7 @@ export default function DigitalIO({ config, onSave }) {
                 <input
                   name={`do_name_${i}`}
                   value={ch.name}
+                  disabled={isReadOnly}
                   onChange={(e) => updateDOChannel(i, { name: e.target.value })}
                 />
               </td>
@@ -245,6 +252,7 @@ export default function DigitalIO({ config, onSave }) {
                   name={`do_pin_${i}`}
                   value={ch.pin}
                   placeholder="GPIO"
+                  disabled={isReadOnly}
                   onChange={(e) => updateDOChannel(i, { pin: e.target.value })}
                 />
               </td>
@@ -252,6 +260,7 @@ export default function DigitalIO({ config, onSave }) {
                 <select
                   name={`do_state_${i}`}
                   value={ch.state}
+                  disabled={isReadOnly}
                   onChange={(e) => updateDOChannel(i, { state: Number(e.target.value) })}
                 >
                   <option value={0}>LOW</option>
@@ -259,7 +268,7 @@ export default function DigitalIO({ config, onSave }) {
                 </select>
               </td>
               <td>
-                <button type="button" onClick={() => removeDO(i)}>
+                <button type="button" disabled={isReadOnly} onClick={() => removeDO(i)}>
                   ✕
                 </button>
               </td>
@@ -267,7 +276,7 @@ export default function DigitalIO({ config, onSave }) {
           ))}
         </tbody>
       </table>
-      <button type="button" className="button-primary" onClick={addDO}>
+      <button type="button" className="button-primary" disabled={isReadOnly} onClick={addDO}>
         + Add Digital Output
       </button>
 
@@ -291,6 +300,7 @@ export default function DigitalIO({ config, onSave }) {
                 <input
                   name={`ro_name_${i}`}
                   value={ch.name}
+                  disabled={isReadOnly}
                   onChange={(e) => updateRelayChannel(i, { name: e.target.value })}
                 />
               </td>
@@ -299,6 +309,7 @@ export default function DigitalIO({ config, onSave }) {
                   name={`ro_pin_${i}`}
                   value={ch.pin}
                   placeholder="GPIO / Relay Addr"
+                  disabled={isReadOnly}
                   onChange={(e) => updateRelayChannel(i, { pin: e.target.value })}
                 />
               </td>
@@ -306,6 +317,7 @@ export default function DigitalIO({ config, onSave }) {
                 <select
                   name={`ro_mode_${i}`}
                   value={ch.mode}
+                  disabled={isReadOnly}
                   onChange={(e) => updateRelayChannel(i, { mode: e.target.value })}
                 >
                   <option value="NO">Normally Open</option>
@@ -317,11 +329,12 @@ export default function DigitalIO({ config, onSave }) {
                   type="checkbox"
                   name={`ro_enable_${i}`}
                   checked={ch.enabled}
+                  disabled={isReadOnly}
                   onChange={(e) => updateRelayChannel(i, { enabled: e.target.checked })}
                 />
               </td>
               <td>
-                <button type="button" onClick={() => removeRelay(i)}>
+                <button type="button" disabled={isReadOnly} onClick={() => removeRelay(i)}>
                   ✕
                 </button>
               </td>
@@ -329,13 +342,13 @@ export default function DigitalIO({ config, onSave }) {
           ))}
         </tbody>
       </table>
-      <button type="button" className="button-primary" onClick={addRelay}>
+      <button type="button" className="button-primary" disabled={isReadOnly} onClick={addRelay}>
         + Add Relay
       </button>
 
-      <DBSettings prefix="digital" db={di.db} role="admin" />
+      <DBSettings prefix="digital" db={di.db} role="admin" isReadOnly={isReadOnly} />
       <br />
-      <button className="button-primary" type="submit">Save Digital Settings</button>
+      <button className="button-primary" type="submit" disabled={isReadOnly}>Save Digital Settings</button>
     </form>
   );
 }

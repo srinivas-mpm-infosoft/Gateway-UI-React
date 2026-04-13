@@ -60,25 +60,16 @@ export default function App() {
   }
 
 return (
-    <ToastProvider>
-      {!isAuthenticated ? (
-        <Login />
-      ) : (
-        <>
-          {/* 🔥 GRAFANA BACKGROUND — outside all wrappers, truly fixed */}
-          {/* <iframe
-            src="http://10.42.0.183:3000/d/ad666l4/mixer-dashboard?kiosk"
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              width: "100%",
-              height: "100%",
-              border: "none",
-              zIndex: 0,
-            }}
-          /> */}
-          <GrafanaFrame/>
+  <ToastProvider>
+    {/* ✅ ALWAYS SHOW GRAFANA */}
+    <GrafanaFrame />
+
+    {/* 🔒 LOGIN OVERLAY */}
+    {!isAuthenticated && <Login />}
+
+    {/* 🔧 PANEL (ONLY AFTER LOGIN) */}
+    {isAuthenticated && (
+      <>
 
           {/* 🌑 BACKDROP */}
           {open && !fullscreen && (

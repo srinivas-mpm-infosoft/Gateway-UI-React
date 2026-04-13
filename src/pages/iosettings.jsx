@@ -150,7 +150,8 @@ export default function IOSettings({ role = "admin", isReadOnly, subTab = "gener
                         type="checkbox"
                         name={item.name}
                         defaultChecked={item.checked}
-                        className="h-5 w-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                        disabled={isReadOnly}
+                        className="h-5 w-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
                       />
                       <span className="ml-3 font-medium text-slate-700 group-hover:text-slate-900">
                         {item.label}
@@ -161,7 +162,7 @@ export default function IOSettings({ role = "admin", isReadOnly, subTab = "gener
                 <div className="pt-6 mt-6 border-t border-slate-100">
                   <button
                     type="submit"
-                    disabled={isSaving}
+                    disabled={isSaving || isReadOnly}
                     className="inline-flex items-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium shadow-sm transition-all disabled:opacity-70"
                   >
                     {isSaving ? (
@@ -177,13 +178,14 @@ export default function IOSettings({ role = "admin", isReadOnly, subTab = "gener
           )}
 
           {subTab === "analog" && (
-            <AnalogIO config={config} onSave={saveConfig} />
+            <AnalogIO config={config} onSave={saveConfig} isReadOnly={isReadOnly} />
           )}
           {subTab === "digital" && (
             <DigitalIO
               config={config}
               onSave={saveConfig}
               setConfig={setConfig}
+              isReadOnly={isReadOnly}
             />
           )}
           {subTab === "modbus-rtu" && (

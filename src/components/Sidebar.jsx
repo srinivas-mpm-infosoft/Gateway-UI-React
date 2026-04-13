@@ -11,7 +11,7 @@ const NAV_ITEMS = [
   // { id: "Wifi/4G",           icon: Wifi,      label: "WiFi / 4G / Ethernet" },
   // { id: "alarm",             icon: Bell,      label: "Alarm",               domId: "nav-alarms" },
   // { id: "file-to-db",        icon: FileText,  label: "File to DB" },
-  { id: "database",          icon: Database,  label: "Database",            domId: "nav-database" },
+  // { id: "database",          icon: Database,  label: "Database",            domId: "nav-database" },
   // { id: "admin-settings",    icon: Settings,  label: "Admin Settings",      domId: "nav-admin-settings" },
   { id: "change-password",   icon: Lock,      label: "Change Password" },
   { id: "add-user",          icon: UserPlus,  label: "Add User" },
@@ -168,7 +168,7 @@ export default function Sidebar({ active, onSelect, role }) {
       {/* Footer */}
       <div className="px-4 py-3 border-t border-white/5 text-center">
         <p className="text-[10px] uppercase tracking-widest" style={{ color: "#374151" }}>
-          Gateway v2.0.26
+          Gateway v2.0
         </p>
       </div>
     </nav>

@@ -36,9 +36,9 @@ export default function RegisterTable({
   return (
     <table className="w-full text-xs border-collapse" style={{ minWidth: 1400 }}>
       <thead>
-        <tr className="bg-zinc-800">
-          <th className={thCls}>#</th>
-          <th className={`${thCls} text-center`}>En</th>
+        <tr className="bg-zinc-800 text-center">
+          <th className={thCls}>S. NO</th>
+          <th className={`${thCls} text-center`}>Enable</th>
           <th className={thCls}>Name</th>
           <th className={thCls}>Start Addr</th>
           <th className={thCls}>Offset</th>
@@ -56,8 +56,8 @@ export default function RegisterTable({
           {/* Write-only columns */}
           <th className={thCls}>Write Type</th>
           <th className={thCls}>Write Fields</th>
-          <th className={`${thCls} text-center`}>Alert</th>
-          <th className={`${thCls} text-center`}>Del</th>
+          <th className={`${thCls} text-center`}>Control</th>
+          <th className={`${thCls} text-center`}>Delete</th>
         </tr>
       </thead>
       <tbody>
@@ -207,7 +207,7 @@ export default function RegisterTable({
                   <option value="0-10V">0–10 V</option>
                   <option value="0-5V">0–5 V</option>
                   <option value="1-5V">1–5 V</option>
-                  <option value="none">Modbus RTU</option>
+                  <option value="none">None</option>
                 </select>
               </td>
 
@@ -301,8 +301,8 @@ export default function RegisterTable({
                     className={selectCls}
                     style={{ width: 115 }}
                   >
-                    <option value="independent">Independent</option>
-                    <option value="alert">Alert</option>
+                    <option value="independent">UnAssigned</option>
+                    <option value="alert">Assigned</option>
                   </select>
                 ) : <Dash />}
               </td>

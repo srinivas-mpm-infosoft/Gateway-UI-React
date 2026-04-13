@@ -27,7 +27,7 @@ export default function PresetsPanel({
   isReadOnly,
 }) {
   const [selectedPreset, setSelectedPreset] = useState("");
-  const [scope, setScope] = useState("brand");
+  const [scope, setScope] = useState("");
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [presetName, setPresetName] = useState("");
   const [showManageModal, setShowManageModal] = useState(false);
@@ -124,6 +124,7 @@ export default function PresetsPanel({
           className={selectCls}
           style={{ minWidth: 120 }}
         >
+          <option value="">Save as Preset</option>
           <option value="brand">Device preset</option>
           <option value="global">Global preset</option>
         </select>

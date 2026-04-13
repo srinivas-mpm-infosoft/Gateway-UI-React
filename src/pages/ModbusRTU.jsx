@@ -822,7 +822,7 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
                     />
                     <span className="font-medium">Slave Enabled</span>
                   </label>
-                  <label className="flex items-center gap-2.5 text-sm text-slate-600 cursor-pointer">
+                  {/* <label className="flex items-center gap-2.5 text-sm text-slate-600 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={!!slaveObj.use_usb}
@@ -831,7 +831,7 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
                       className="h-4 w-4 rounded border-slate-300 accent-zinc-700"
                     />
                     <span className="font-medium">Use USB</span>
-                  </label>
+                  </label> */}
                   <label className="flex items-center gap-2.5 text-sm text-slate-600 cursor-pointer">
                     <input
                       type="checkbox"
@@ -1064,11 +1064,11 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
           <Modal title={`Alert Settings — ${currentRow?.name || `Row ${alertModal.rowIdx + 1}`}`} onClose={() => setAlertModal({ open: false, rowIdx: -1, data: {} })} width={660}>
             <div className="space-y-5">
 
-              {/* ── Write-Alert registers summary ── */}
+              {/* ── Control registers summary ── */}
               {allWriteAlertRegs.length > 0 && (
                 <div className="rounded-xl border border-amber-200 overflow-hidden">
                   <div className="flex items-center justify-between px-4 py-2.5 bg-amber-50 border-b border-amber-200">
-                    <span className="text-[10px] font-bold text-amber-700 uppercase tracking-widest">Write-Alert Registers</span>
+                    <span className="text-[10px] font-bold text-amber-700 uppercase tracking-widest">Control Registers</span>
                     <span className="text-[10px] font-semibold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">{allWriteAlertRegs.length}</span>
                   </div>
                   <div className="divide-y divide-amber-100 bg-white">
@@ -1091,7 +1091,7 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
                 <div className="flex items-start gap-2.5 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
                   <div className="w-2 h-2 rounded-full bg-blue-400 flex-shrink-0 mt-1" />
                   <p className="text-xs text-blue-700 leading-relaxed">
-                    This register is in <b>Write-Alert</b> mode. Write output range is configured in the register table.
+                    This register is in <b>Control</b> mode. Write output range is configured in the register table.
                   </p>
                 </div>
               )}
@@ -1101,7 +1101,7 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
                 {!isBoolReg && (
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-slate-700 uppercase tracking-widest">Alerts</span>
+                      <span className="text-xs font-bold text-slate-700 uppercase tracking-widest">Control</span>
                       {modalAlerts.length > 0 && (
                         <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">{modalAlerts.length}</span>
                       )}
@@ -1415,7 +1415,7 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
                           </div>
 
                           {/* Notification */}
-                          <div className="space-y-3">
+                          {/* <div className="space-y-3">
                             <span className={lbl}>Notification</span>
                             <div className="grid grid-cols-2 gap-3">
                               <div>
@@ -1437,7 +1437,7 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
                                 value={a.message ?? ""} onChange={(e) => updAlert(ai, { message: e.target.value })}
                                 className={inp} />
                             </div>
-                          </div>
+                          </div> */}
 
                           {/* Normal Action */}
                           <div className="space-y-3">

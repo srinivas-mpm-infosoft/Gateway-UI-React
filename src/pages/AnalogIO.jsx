@@ -25,7 +25,7 @@ const defaultAnalogOutput = {
   channels: [{ name: "AO1", enabled: false, mode: "0-10V", range: "", address: "" }],
 };
 
-export default function AnalogIO({ config, onSave }) {
+export default function AnalogIO({ config, onSave, isReadOnly = false }) {
   const [analog, setAnalog] = useState(defaultAnalog);
   const [analogOutput, setAnalogOutput] = useState(defaultAnalogOutput);
 
@@ -89,6 +89,7 @@ export default function AnalogIO({ config, onSave }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (isReadOnly) return;
 
     for (let i = 0; i < analog.channels.length; i += 1) {
       const min = getAnalogMin(analog.channels[i].range);
@@ -144,6 +145,7 @@ export default function AnalogIO({ config, onSave }) {
             name="intervalUnit"
             value="Sec"
             defaultChecked={analog.pollingIntervalUnit === "Sec"}
+            disabled={isReadOnly}
             onChange={() => setAnalog((p) => ({ ...p, pollingIntervalUnit: "Sec" }))}
           />
           Sec
@@ -154,6 +156,7 @@ export default function AnalogIO({ config, onSave }) {
             name="intervalUnit"
             value="Min"
             defaultChecked={analog.pollingIntervalUnit === "Min"}
+            disabled={isReadOnly}
             onChange={() => setAnalog((p) => ({ ...p, pollingIntervalUnit: "Min" }))}
           />
           Min
@@ -164,6 +167,7 @@ export default function AnalogIO({ config, onSave }) {
             name="intervalUnit"
             value="Hour"
             defaultChecked={analog.pollingIntervalUnit === "Hour"}
+            disabled={isReadOnly}
             onChange={() => setAnalog((p) => ({ ...p, pollingIntervalUnit: "Hour" }))}
           />
           Hour
@@ -173,6 +177,7 @@ export default function AnalogIO({ config, onSave }) {
           type="number"
           name="pollingInterval"
           value={analog.pollingInterval}
+          disabled={isReadOnly}
           onChange={(e) => setAnalog((p) => ({ ...p, pollingInterval: Number(e.target.value) }))}
           min={1}
           style={{ width: 70, marginLeft: 6 }}
@@ -203,6 +208,7 @@ export default function AnalogIO({ config, onSave }) {
                   <input
                     name={`ai_name_${i}`}
                     value={ch.name}
+                    disabled={isReadOnly}
                     onChange={(e) => updateAIChannel(i, { name: e.target.value })}
                   />
                 </td>
@@ -211,6 +217,7 @@ export default function AnalogIO({ config, onSave }) {
                     type="checkbox"
                     name={`ai_enable_${i}`}
                     checked={ch.enabled}
+                    disabled={isReadOnly}
                     onChange={(e) => updateAIChannel(i, { enabled: e.target.checked })}
                   />
                 </td>
@@ -218,6 +225,7 @@ export default function AnalogIO({ config, onSave }) {
                   <select
                     name={`ai_mode_${i}`}
                     value={ch.mode}
+                    disabled={isReadOnly}
                     onChange={(e) => {
                       const mode = e.target.value;
                       const symbol = mode.includes("mA") ? "mA" : "V";
@@ -241,6 +249,7 @@ export default function AnalogIO({ config, onSave }) {
                     step="any"
                     name={`ai_min_${i}`}
                     value={min}
+                    disabled={isReadOnly}
                     onChange={(e) => {
                       const newMin = e.target.value;
                       const unit = ch.mode.includes("mA") ? "mA" : "V";
@@ -257,6 +266,7 @@ export default function AnalogIO({ config, onSave }) {
                     step="any"
                     name={`ai_max_${i}`}
                     value={max}
+                    disabled={isReadOnly}
                     onChange={(e) => {
                       const newMax = e.target.value;
                       const unit = ch.mode.includes("mA") ? "mA" : "V";
@@ -272,11 +282,12 @@ export default function AnalogIO({ config, onSave }) {
                     name={`ai_address_${i}`}
                     value={ch.address}
                     placeholder="Addr"
+                    disabled={isReadOnly}
                     onChange={(e) => updateAIChannel(i, { address: e.target.value })}
                   />
                 </td>
                 <td>
-                  <button type="button" onClick={() => removeAI(i)}>
+                  <button type="button" disabled={isReadOnly} onClick={() => removeAI(i)}>
                     ✕
                   </button>
                 </td>
@@ -285,7 +296,7 @@ export default function AnalogIO({ config, onSave }) {
           })}
         </tbody>
       </table>
-      <button type="button" onClick={addAI} className="button-primary">
+      <button type="button" onClick={addAI} disabled={isReadOnly} className="button-primary">
         + Add Analog Input
       </button>
 
@@ -314,6 +325,7 @@ export default function AnalogIO({ config, onSave }) {
                   <input
                     name={`ao_name_${i}`}
                     value={ch.name}
+                    disabled={isReadOnly}
                     onChange={(e) => updateAOChannel(i, { name: e.target.value })}
                   />
                 </td>
@@ -322,6 +334,7 @@ export default function AnalogIO({ config, onSave }) {
                     type="checkbox"
                     name={`ao_enable_${i}`}
                     checked={ch.enabled}
+                    disabled={isReadOnly}
                     onChange={(e) => updateAOChannel(i, { enabled: e.target.checked })}
                   />
                 </td>
@@ -329,6 +342,7 @@ export default function AnalogIO({ config, onSave }) {
                   <select
                     name={`ao_mode_${i}`}
                     value={ch.mode}
+                    disabled={isReadOnly}
                     onChange={(e) => updateAOChannel(i, { mode: e.target.value })}
                   >
                     <option value="0-10V">0–10V</option>
@@ -341,6 +355,7 @@ export default function AnalogIO({ config, onSave }) {
                     step="any"
                     name={`ao_min_${i}`}
                     value={min}
+                    disabled={isReadOnly}
                     onChange={(e) => {
                       const newMin = e.target.value;
                       const unit = ch.mode.includes("mA") ? "mA" : "V";
@@ -357,6 +372,7 @@ export default function AnalogIO({ config, onSave }) {
                     step="any"
                     name={`ao_max_${i}`}
                     value={max}
+                    disabled={isReadOnly}
                     onChange={(e) => {
                       const newMax = e.target.value;
                       const unit = ch.mode.includes("mA") ? "mA" : "V";
@@ -371,11 +387,12 @@ export default function AnalogIO({ config, onSave }) {
                   <input
                     name={`ao_address_${i}`}
                     value={ch.address}
+                    disabled={isReadOnly}
                     onChange={(e) => updateAOChannel(i, { address: e.target.value })}
                   />
                 </td>
                 <td>
-                  <button type="button" onClick={() => removeAO(i)}>
+                  <button type="button" disabled={isReadOnly} onClick={() => removeAO(i)}>
                     ✕
                   </button>
                 </td>
@@ -384,13 +401,13 @@ export default function AnalogIO({ config, onSave }) {
           })}
         </tbody>
       </table>
-      <button type="button" onClick={addAO} className="button-primary">
+      <button type="button" onClick={addAO} disabled={isReadOnly} className="button-primary">
         + Add Analog Output
       </button>
 
-      <DBSettings prefix="analog" db={analog.db} role="admin" />
+      <DBSettings prefix="analog" db={analog.db} role="admin" isReadOnly={isReadOnly} />
       <br />
-      <button className="button-primary" type="submit">
+      <button className="button-primary" type="submit" disabled={isReadOnly}>
         Save
       </button>
     </form>
