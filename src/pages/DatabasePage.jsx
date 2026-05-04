@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Database, Cloud, Save, CheckCircle, AlertCircle, Loader2 } from "lucide-react"; // Optional icons for flair
 import { useToast } from "../components/ToastContext"; // Importing toast context for notifications
+import { targetUrl } from "../config";
 
 const defaultDatabase = {
   local: {
@@ -24,7 +25,9 @@ export default function DatabasePage({ isReadOnly = false }) {
   useEffect(() => {
     async function fetchConfig() {
       try {
-        const res = await fetch("/config");
+        const res = await fetch(`${targetUrl}/config`,{
+          credentials: 'include',
+        });
         const data = await res.json();
         const db = data.Database || defaultDatabase;
         setConfig(data);
@@ -81,8 +84,9 @@ export default function DatabasePage({ isReadOnly = false }) {
     const next = { ...config, Database: database };
 
     try {
-      const res = await fetch("/config", {
+      const res = await fetch(`${targetUrl}/config`, {
         method: "POST",
+        credentials: 'include',
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(next),
       });

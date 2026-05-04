@@ -7,6 +7,7 @@ import AdminSettings from "./../pages/AdminSettings";
 import ChangePassword from "./../pages/ChangePassword";
 import AddUser from "./../pages/AddUser";
 import { useState } from "react";
+import {targetUrl} from "./../config";
 
 // Map panel IDs that belong to IO Settings → their subTab value
 const IO_SUB_TAB_MAP = {
@@ -22,7 +23,10 @@ const IO_SUB_TAB_MAP = {
 export default function MainPanel({ panel, user }) {
   const logout = async () => {
     try {
-      await fetch("/logout", { method: "POST" });
+      await fetch(`${targetUrl}/logout`, {
+        method: "POST",
+        credentials: 'include',
+      });
     } catch (err) {
       console.error(err);
     }

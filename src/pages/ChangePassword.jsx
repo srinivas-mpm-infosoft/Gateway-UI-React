@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { KeyRound, CheckCircle, AlertTriangle, Save, Loader2 } from "lucide-react";
+import { targetUrl } from "../config";
 
 export default function ChangePassword() {
     const [oldPassword, setOldPassword] = useState("");
@@ -22,8 +23,9 @@ export default function ChangePassword() {
         }
 
         try {
-            const res = await fetch("/reset-password", {
+            const res = await fetch(`${targetUrl}/reset-password`, {
                 method: "POST",
+                credentials: 'include',
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ oldPassword, newPassword, login_req: false }),
             });

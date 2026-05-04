@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { UserPlus, ShieldCheck, User, Lock, Save, Loader2, AlertCircle } from "lucide-react";
 import { useToast } from "../components/ToastContext";
+import { targetUrl } from "../config";
 
 const allowedRolesByCreator = {
   superadmin: ["superadmin", "admin", "user"],
@@ -26,8 +27,9 @@ export default function AddUser({ currentRole = "superadmin" }) {
 
     setIsPending(true);
     try {
-      const res = await fetch("/create-user", {
+      const res = await fetch(`${targetUrl}/create-user`, {
         method: "POST",
+        credentials: 'include',
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password, role }),
       });

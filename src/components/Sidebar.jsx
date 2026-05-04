@@ -9,8 +9,8 @@ import {
 const NAV_ITEMS = [
   { id: "io-settings-group", icon: Sliders,   label: "I/O Settings",        isGroup: true },
   { id: "Wifi/4G",           icon: Wifi,      label: "WiFi / 4G / Ethernet" },
-  { id: "alarm",             icon: Bell,      label: "Alarm",               domId: "nav-alarms" },
-  { id: "file-to-db",        icon: FileText,  label: "File to DB" },
+  // { id: "alarm",             icon: Bell,      label: "Alarm",               domId: "nav-alarms" },
+  // { id: "file-to-db",        icon: FileText,  label: "File to DB" },
   { id: "database",          icon: Database,  label: "Database",            domId: "nav-database" },
   { id: "admin-settings",    icon: Settings,  label: "Admin Settings",      domId: "nav-admin-settings" },
   { id: "change-password",   icon: Lock,      label: "Change Password" },

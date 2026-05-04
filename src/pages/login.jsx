@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import logo from "../assets/apple-touch-icon.png";
+import { targetUrl } from "../config";
+
 export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -10,6 +12,7 @@ export default function Login() {
   const [fpNew, setFpNew] = useState("");
   const [fpConfirm, setFpConfirm] = useState("");
   const [fpError, setFpError] = useState("");
+
 
   useEffect(() => {
     // Explicitly wipe state on component mount (refresh)
@@ -36,8 +39,9 @@ export default function Login() {
     }
 
     try {
-      const res = await fetch("/login", {
+      const res = await fetch(`${targetUrl}/login`, {
         method: "POST",
+        credentials: 'include',
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
       });
@@ -69,8 +73,9 @@ export default function Login() {
     }
 
     try {
-      const res = await fetch("/reset-password", {
+      const res = await fetch(`${targetUrl}/reset-password`, {
         method: "POST",
+        credentials: 'include',
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: fpUser, newPassword: fpNew }),
       });

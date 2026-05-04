@@ -7,6 +7,7 @@ import "./App.css";
 import { ToastProvider } from "./components/ToastContext";
 import { useAuthStore } from "./store/useAuthStore";
 import GrafanaFrame from "./pages/GrafanaFrame";
+import { targetUrl } from "./config";
 
 export default function App() {
   const [activePanel, setActivePanel] = useState("io-general");
@@ -22,7 +23,9 @@ export default function App() {
   useEffect(() => {
     async function verifySession() {
       try {
-        const res = await fetch("/whoami");
+        const res = await fetch(`${targetUrl}/whoami`,{
+          credentials: 'include',
+        });
         if (res.ok) {
           const userData = await res.json();
           setUser(userData);

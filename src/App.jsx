@@ -6,6 +6,7 @@ import Login from "./pages/login";
 import './App.css'
 import { ToastProvider } from "./components/ToastContext"; // New Toast Provider
 import { useAuthStore } from "./store/useAuthStore";
+import {targetUrl} from "./config";
 // import {BrowserRouter as Router, Route, Routes, BrowserRouter} from "react-router-dom";
 
 export default function App() {
@@ -18,7 +19,9 @@ export default function App() {
   useEffect(() => {
     async function verifySession() {
       try {
-        const res = await fetch("/whoami");
+        const res = await fetch(`${targetUrl}/whoami`,{
+          credentials: 'include',
+        });
         if (res.ok) {
           const userData = await res.json();
           setUser(userData);

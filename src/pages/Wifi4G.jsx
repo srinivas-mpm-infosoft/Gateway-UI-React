@@ -9,6 +9,7 @@ import {
   Loader2,
   Globe
 } from "lucide-react";
+import {targetUrl} from "../config";
 
 
 import { useToast } from "../components/ToastContext";
@@ -37,7 +38,9 @@ export default function Wifi4G({ isReadOnly = false }) {
   useEffect(() => {
     async function loadConfig() {
       try {
-        const res = await fetch("/config");
+        const res = await fetch(`${targetUrl}/config`,{
+          credentials: 'include',
+        });
         if (!res.ok) return;
         const data = await res.json();
         setNetwork({
@@ -59,8 +62,9 @@ export default function Wifi4G({ isReadOnly = false }) {
     setStatus({ msg: "", type: "" });
     setIsSaving(true);
     try {
-      const res = await fetch("/config", {
+      const res = await fetch(`${targetUrl}/config`, {
         method: "POST",
+        credentials: 'include',
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ network: nextNetwork }),
       });

@@ -6,6 +6,8 @@ import { useToast } from "../components/ToastContext";
 import DigitalIO from "./DigitalIO";
 import ModbusRTU from "./ModbusRTU";
 import ModbusTCP from "./ModbusTCP";
+import {targetUrl} from "../config";
+
 
 /**
  * IOSettings – config wrapper for all I/O sub-pages.
@@ -22,7 +24,9 @@ export default function IOSettings({ role = "admin", isReadOnly, subTab = "gener
   const showToast = useToast();
 
   useEffect(() => {
-    fetch("/config")
+    fetch(`${targetUrl}/config`,{
+      credentials: 'include',
+    })
       .then((res) => res.json())
       .then((data) => {
         setConfig(data);
@@ -37,8 +41,9 @@ export default function IOSettings({ role = "admin", isReadOnly, subTab = "gener
   const saveConfig = async (updatedConfig) => {
     setIsSaving(true);
     try {
-      const res = await fetch("/config", {
+      const res = await fetch(`${targetUrl}/config`, {
         method: "POST",
+        credentials: 'include',
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedConfig),
       });
