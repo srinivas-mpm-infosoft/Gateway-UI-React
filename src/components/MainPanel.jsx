@@ -67,7 +67,7 @@ export default function MainPanel({ panel, user }) {
           Access denied: database view available for admin/superadmin.
         </div>
       )}
-      {/* 
+      
       {panel === "admin-settings" && user?.role !== "user" && (
         <AdminSettings isReadOnly={isReadOnly} />
       )}
@@ -75,7 +75,7 @@ export default function MainPanel({ panel, user }) {
         <div style={{ padding: 20, color: "#d32f2f" }}>
           Access denied: admin settings available for admin/superadmin.
         </div>
-      )} */}
+      )}
 
       {panel === "change-password" && <ChangePassword />}
       {panel === "add-user" && <AddUser currentRole={user?.role || "user"} />}
