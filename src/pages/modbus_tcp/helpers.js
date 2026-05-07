@@ -96,8 +96,49 @@ export function normalizePlcEntry(entry) {
   };
 }
 
+function normalizeFileField(f) {
+  return {
+    field_name: f.field_name ?? "",
+    data_type: f.data_type ?? "STRING",
+    source: f.source ?? "",
+  };
+}
+
+export function normalizeScadaDevice(d) {
+  return {
+    label: d.label ?? "",
+    enabled: d.enabled ?? true,
+    os: d.os ?? "Windows",
+    username: d.username ?? "",
+    password: d.password ?? "",
+    protocol: d.protocol ?? "HTTP",
+    scada_software: d.scada_software ?? "",
+    ip: d.ip ?? "",
+    port: d.port ?? 80,
+    file_storage_location: d.file_storage_location ?? "",
+    file_structure: (d.file_structure ?? []).map(normalizeFileField),
+  };
+}
+
+export function normalizeHmiDevice(d) {
+  return {
+    label: d.label ?? "",
+    enabled: d.enabled ?? true,
+    os: d.os ?? "Windows",
+    username: d.username ?? "",
+    password: d.password ?? "",
+    protocol: d.protocol ?? "HTTP",
+    ip: d.ip ?? "",
+    port: d.port ?? 80,
+    file_storage_location: d.file_storage_location ?? "",
+    file_structure: (d.file_structure ?? []).map(normalizeFileField),
+  };
+}
+
 export function ensureBase(cfg) {
   const next = { ...(cfg ?? {}) };
   next.plc_configurations = (next.plc_configurations ?? []).map(normalizePlcEntry);
+  next.scada_configurations = (next.scada_configurations ?? []).map(normalizeScadaDevice);
+  next.hmi_configurations = (next.hmi_configurations ?? []).map(normalizeHmiDevice);
   return next;
 }
