@@ -208,7 +208,23 @@ export default function ModbusTCP({ config, onSave, setConfig, role = "admin", i
   // Label helpers
   // ---------------------------------------------------------------------------
   const plcLabel = (p) => p.PLC?.cred?.ip || "New Device";
-  const deviceLabel = (d, i) => d.ip || d.label || `Device ${i + 1}`;
+  // const deviceLabel = (d, i) => d.ip || d.label || `Device ${i + 1}`;
+
+  const deviceLabel = (d, i) => {
+  if (d.protocol === "OPC UA") {
+    return (
+      d.connection?.endpoint_url ||
+      d.label ||
+      `Device ${i + 1}`
+    );
+  }
+
+  return (
+    d.connection?.ip ||
+    d.label ||
+    `Device ${i + 1}`
+  );
+};
 
   // Active items (with bounds check)
   const activePlc =

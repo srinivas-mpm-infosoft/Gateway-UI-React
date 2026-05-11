@@ -64,7 +64,7 @@ export default function App() {
       <div className="flex flex-col h-screen overflow-hidden bg-[#dfe3ea]">
         {/* Top Bar - Fixed height, won't scroll */}
         <div className="flex-shrink-0">
-          <WindowBar />
+          <WindowBar /> 
         </div>
 
         {/* Body Area - Takes remaining height */}
