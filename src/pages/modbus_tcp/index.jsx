@@ -307,15 +307,27 @@ export default function ModbusTCP({ config, onSave, setConfig, role = "admin", i
                 <span className="text-xs font-semibold text-slate-500">
                   {activeBrand} — {plcLabel(activePlc)}
                 </span>
-                {!isReadOnly && (
-                  <button
-                    type="button"
-                    onClick={() => removePlc(activePlcGlobalIdx)}
-                    className="text-xs text-red-400 hover:text-red-600 transition-colors"
-                  >
-                    Remove Device
-                  </button>
-                )}
+                <div className="flex items-center gap-4">
+                  <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={!!activePlc.enabled}
+                      disabled={isReadOnly}
+                      onChange={(e) => updatePlc(activePlcGlobalIdx, { enabled: e.target.checked })}
+                      className="h-3.5 w-3.5 rounded border-slate-300 accent-zinc-700"
+                    />
+                    <span className="text-xs text-slate-500 font-medium">Enabled</span>
+                  </label>
+                  {!isReadOnly && (
+                    <button
+                      type="button"
+                      onClick={() => removePlc(activePlcGlobalIdx)}
+                      className="text-xs text-red-400 hover:text-red-600 transition-colors"
+                    >
+                      Remove Device
+                    </button>
+                  )}
+                </div>
               </div>
               {activePlc.plcType === "Siemens" ? (
                 <SiemensForm
