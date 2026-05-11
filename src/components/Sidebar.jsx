@@ -20,8 +20,8 @@ const NAV_ITEMS = [
 
 const IO_SUB_ITEMS = [
   { id: "io-general",    icon: Settings2, label: "General" },
-  { id: "io-analog",     icon: Activity,  label: "Analog I/O" },
-  { id: "io-digital",    icon: Zap,       label: "Digital I/O" },
+  //{ id: "io-analog",     icon: Activity,  label: "Analog I/O" },
+  //{ id: "io-digital",    icon: Zap,       label: "Digital I/O" },
   { id: "io-modbus-rtu", icon: Cpu,       label: "Modbus RTU" },
   { id: "io-modbus-tcp", icon: Network,   label: "Modbus TCP" },
 ];

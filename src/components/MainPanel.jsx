@@ -12,8 +12,8 @@ import {targetUrl} from "./../config";
 // Map panel IDs that belong to IO Settings → their subTab value
 const IO_SUB_TAB_MAP = {
   "io-general": "general",
-  "io-analog": "analog",
-  "io-digital": "digital",
+  //"io-analog": "analog",
+  //"io-digital": "digital",
   "io-modbus-rtu": "modbus-rtu",
   "io-modbus-tcp": "modbus-tcp",
   // legacy alias
