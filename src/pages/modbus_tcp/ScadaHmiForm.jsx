@@ -882,6 +882,7 @@
 
 import React from "react";
 import { X } from "lucide-react";
+import DBSettings from "../DBSettings";
 
 const inp =
   "w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs bg-white focus:outline-none focus:ring-1 focus:ring-zinc-400 focus:border-zinc-400 text-slate-700 disabled:bg-slate-50 disabled:text-slate-400";
@@ -900,6 +901,7 @@ export default function ScadaHmiForm({
   onChange,
   isReadOnly,
   isScada = false,
+  role,
 }) {
   // ---------------------------------------------------------------------------
   // Protocols
@@ -1094,6 +1096,22 @@ export default function ScadaHmiForm({
 
   return (
     <div className="space-y-5">
+      {/* Database Storage — always at top */}
+      <div>
+        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">
+          Database Storage
+        </span>
+        <DBSettings
+          prefix={isScada ? "scada" : "hmi"}
+          db={device.db}
+          role={role}
+          isReadOnly={isReadOnly}
+          onChange={(field, value) =>
+            onChange((d) => ({ ...d, db: { ...(d.db ?? {}), [field]: value } }))
+          }
+        />
+      </div>
+
       {/* System */}
       <div>
         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-3">
@@ -1674,6 +1692,7 @@ export default function ScadaHmiForm({
           </button>
         </>
       )}
+
     </div>
   );
 }

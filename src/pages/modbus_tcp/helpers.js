@@ -20,16 +20,19 @@ export function convertFromSec(sec, unit) {
 
 export function normalizeSiemensRow(r) {
   return {
-    content: r.content ?? "",
-    DB_no: r.DB_no ?? 0,
-    address: r.address ?? 0,
-    type: r.type ?? "float",
-    size: r.size ?? "",
-    min: r.min ?? "",
-    max: r.max ?? "",
-    value: r.value ?? "",
-    read: r.read !== false,
-    write: r.write ?? false,
+    content:     r.content     ?? "",
+    DB_no:       r.DB_no       ?? 0,
+    address:     r.address     ?? 0,
+    type:        r.type        ?? "REAL",
+    // size is auto-derived from type — not stored
+    output_mode: r.output_mode ?? "value",
+    output_pct:  r.output_pct  ?? "",
+    value:       r.value       ?? "",
+    min:         r.min         ?? "",
+    max:         r.max         ?? "",
+    read:        r.read        !== false,
+    write:       r.write       ?? false,
+    status:      r.status      ?? "Unassigned",
   };
 }
 
@@ -45,9 +48,11 @@ export function normalizeAllenBradleyRow(r) {
     length: r.length ?? 1,
     min: r.min ?? "",
     max: r.max ?? "",
+    output_pct: r.output_pct ?? "",
     value: r.value ?? "",
     read: r.read !== false,
     write: r.write ?? false,
+    status: r.status ?? "Unassigned",
   };
 }
 
@@ -291,6 +296,10 @@ function normalizeBaseDevice(d) {
     connection: normalizeConnection(d),
     authentication: normalizeAuthentication(d),
     data_source: normalizeDataSource(d),
+    db: {
+      upload_local: d.db?.upload_local ?? true,
+      upload_cloud: d.db?.upload_cloud ?? false,
+    },
   };
 }
 

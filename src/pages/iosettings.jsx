@@ -6,6 +6,7 @@ import { useToast } from "../components/ToastContext";
 import DigitalIO from "./DigitalIO";
 import ModbusRTU from "./ModbusRTU";
 import ModbusTCP from "./ModbusTCP";
+import MqttSettings from "./MqttSettings";
 import {targetUrl} from "../config";
 
 
@@ -38,7 +39,7 @@ export default function IOSettings({ role = "admin", isReadOnly, subTab = "gener
       });
   }, []);
 
-  const saveConfig = async (updatedConfig) => {
+  const saveConfig = async (updatedConfig, customMessage) => {
     setIsSaving(true);
     try {
       const res = await fetch(`${targetUrl}/config`, {
@@ -50,13 +51,17 @@ export default function IOSettings({ role = "admin", isReadOnly, subTab = "gener
       if (res.ok) {
         setConfig(updatedConfig);
         const messages = {
-          general: "Module switches updated successfully!",
-          analog: "Analog calibration saved!",
-          digital: "Digital channels updated!",
+          general:      "Module switches updated successfully!",
+          analog:       "Analog calibration saved!",
+          digital:      "Digital channels updated!",
           "modbus-rtu": "Modbus RTU settings saved!",
-          "modbus-tcp": "Modbus TCP settings saved!",
+          "modbus-tcp": "PLC settings saved!",
+          plc:          "PLC settings saved!",
+          scada:        "SCADA settings saved!",
+          hmi:          "HMI settings saved!",
+          mqtt:         "MQTT settings saved!",
         };
-        showToast(messages[subTab] ?? "Settings updated!", "success");
+        showToast(customMessage ?? messages[subTab] ?? "Settings updated!", "success");
       } else {
         showToast("Failed to save settings", "error");
       }
@@ -115,12 +120,23 @@ export default function IOSettings({ role = "admin", isReadOnly, subTab = "gener
                   e.preventDefault();
                   const fd = new FormData(e.target);
                   const nc = JSON.parse(JSON.stringify(config));
+                  const prev = config.ioSettings?.settings ?? {};
                   nc.ioSettings.settings.modbus = fd.get("modbus") === "on";
-                  nc.ioSettings.settings.modbusTCP = fd.get("modbusTCP") === "on";
+                  nc.ioSettings.settings.plc = fd.get("plc") === "on";
+                  nc.ioSettings.settings.scada = fd.get("scada") === "on";
+                  nc.ioSettings.settings.hmi = fd.get("hmi") === "on";
+                  nc.ioSettings.settings.remoteDbSync = fd.get("remoteDbSync") === "on";
                   nc.ioSettings.settings.analog = fd.get("analog") === "on";
                   nc.ioSettings.settings.digitalInput =
                     fd.get("digitalInput") === "on";
-                  saveConfig(nc);
+                  const changes = [];
+                  [["plc", "PLC"], ["scada", "SCADA"], ["hmi", "HMI"]].forEach(([key, label]) => {
+                    const next = fd.get(key) === "on";
+                    if (next !== !!prev[key])
+                      changes.push(`${label} ${next ? "enabled" : "disabled"}`);
+                  });
+                  const msg = changes.length > 0 ? changes.join(", ") : undefined;
+                  saveConfig(nc, msg);
                 }}
                 className="space-y-4"
               >
@@ -132,20 +148,25 @@ export default function IOSettings({ role = "admin", isReadOnly, subTab = "gener
                       checked: config.ioSettings?.settings?.modbus,
                     },
                     {
-                      name: "modbusTCP",
-                      label: "Modbus TCP/IP Protocol",
-                      checked: config.ioSettings?.settings?.modbusTCP,
+                      name: "plc",
+                      label: "PLC",
+                      checked: config.ioSettings?.settings?.plc,
                     },
-                    // {
-                    //   name: "analog",
-                    //   label: "Analog Input/Output",
-                    //   checked: config.ioSettings?.settings?.analog,
-                    // },
-                    // {
-                    //   name: "digitalInput",
-                    //   label: "Digital Input/Output",
-                    //   checked: config.ioSettings?.settings?.digitalInput,
-                    // },
+                    {
+                      name: "scada",
+                      label: "SCADA",
+                      checked: config.ioSettings?.settings?.scada,
+                    },
+                    {
+                      name: "hmi",
+                      label: "HMI",
+                      checked: config.ioSettings?.settings?.hmi,
+                    },
+                    {
+                      name: "remoteDbSync",
+                      label: "Remote DB Sync (MSSQL)",
+                      checked: config.ioSettings?.settings?.remoteDbSync,
+                    },
                   ].map((item) => (
                     <label
                       key={item.name}
@@ -202,11 +223,44 @@ export default function IOSettings({ role = "admin", isReadOnly, subTab = "gener
               isReadOnly={isReadOnly}
             />
           )}
+          {subTab === "plc" && (
+            <ModbusTCP
+              config={config}
+              onSave={saveConfig}
+              setConfig={setConfig}
+              defaultTab="PLC"
+            />
+          )}
+          {subTab === "scada" && (
+            <ModbusTCP
+              config={config}
+              onSave={saveConfig}
+              setConfig={setConfig}
+              defaultTab="SCADA PC"
+            />
+          )}
+          {subTab === "hmi" && (
+            <ModbusTCP
+              config={config}
+              onSave={saveConfig}
+              setConfig={setConfig}
+              defaultTab="HMI"
+            />
+          )}
+          {/* legacy fallback */}
           {subTab === "modbus-tcp" && (
             <ModbusTCP
               config={config}
               onSave={saveConfig}
               setConfig={setConfig}
+              defaultTab="PLC"
+            />
+          )}
+          {subTab === "mqtt" && (
+            <MqttSettings
+              config={config}
+              onSave={saveConfig}
+              isReadOnly={isReadOnly}
             />
           )}
         </div>
