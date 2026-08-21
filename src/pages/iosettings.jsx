@@ -164,7 +164,7 @@ export default function IOSettings({ role = "admin", isReadOnly, subTab = "gener
                     },
                     {
                       name: "remoteDbSync",
-                      label: "Remote DB Sync (MSSQL)",
+                      label: "MSSQL Connectivity",
                       checked: config.ioSettings?.settings?.remoteDbSync,
                     },
                   ].map((item) => (

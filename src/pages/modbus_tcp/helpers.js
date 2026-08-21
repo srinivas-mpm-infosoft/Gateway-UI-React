@@ -135,6 +135,7 @@ function classifyProtocol(protocol) {
   if (p === "OPC UA") return "opcua";
   if (p === "MODBUS TCP") return "modbus";
   if (p === "FILE BASED SHARING" || p === "FILE SHARING") return "file";
+  if (p === "MSSQL CONNECTIVITY" || p === "MSSQL") return "mssql";
   return "http"; // default
 }
 
@@ -182,6 +183,27 @@ function normalizeModbusRegister(r) {
   };
 }
 
+// Local DB destination — connection details always come from config.Database.local.cred.
+function normalizeLocalDest(d) {
+  return {
+    enabled: d?.enabled ?? false,
+    database: d?.database ?? "",
+    table_name: d?.table_name ?? "",
+  };
+}
+
+function normalizeSandmanDest(d) {
+  return {
+    enabled: d?.enabled ?? false,
+    host: d?.host ?? "",
+    port: d?.port ?? 1433,
+    username: d?.username ?? "",
+    password: d?.password ?? "",
+    database: d?.database ?? "",
+    table_name: d?.table_name ?? "",
+  };
+}
+
 // -----------------------------------------------------------------------------
 // Connection — keyed by classified protocol
 // -----------------------------------------------------------------------------
@@ -220,6 +242,19 @@ function normalizeConnection(d) {
       file_location: c.file_location ?? "",
       username: c.username ?? "",
       password: c.password ?? "",
+    };
+  }
+
+  if (kind === "mssql") {
+    return {
+      host: c.host ?? "",
+      port: c.port ?? 1433,
+      username: c.username ?? "",
+      password: c.password ?? "",
+      database: c.database ?? "",
+      table_name: c.table_name ?? "",
+      polling_interval: c.polling_interval ?? 60,
+      polling_interval_unit: c.polling_interval_unit ?? "sec",
     };
   }
 
@@ -277,6 +312,16 @@ function normalizeDataSource(d) {
       columns: Array.isArray(ds.columns)
         ? ds.columns.map(normalizeFileColumn)
         : [],
+    };
+  }
+
+  if (kind === "mssql") {
+    return {
+      destinations: {
+        local_db: normalizeLocalDest(ds.destinations?.local_db),
+        sandman_local: normalizeSandmanDest(ds.destinations?.sandman_local),
+        sandman_prod: normalizeSandmanDest(ds.destinations?.sandman_prod),
+      },
     };
   }
 

@@ -110,7 +110,6 @@ import DatabasePage from "./../pages/DatabasePage";
 import AdminSettings from "./../pages/AdminSettings";
 import ChangePassword from "./../pages/ChangePassword";
 import UserManagement from "./../pages/UserManagement";
-import RemoteDbSync from "./../pages/RemoteDbSync";
 import { targetUrl } from "./../config";
 
 // Normalize legacy 3-role → 7-role for permission checks
@@ -143,7 +142,6 @@ const AA_SUB_TAB_MAP = {
 const KNOWN_PANELS = new Set([
   "Wifi/4G", "alarm", "file-to-db", "database",
   "admin-settings", "change-password", "user-management", "logout",
-  "io-rdb-mssql",
 ]);
 
 export default function MainPanel({ panel, user }) {
@@ -174,11 +172,6 @@ export default function MainPanel({ panel, user }) {
       {/* ── I/O Settings ── */}
       {ioSubTab !== null && (
         <IOSettings subTab={ioSubTab} isReadOnly={isReadOnly} role={user?.role} />
-      )}
-
-      {/* ── Remote DB Sync (under I/O Settings) ── */}
-      {panel === "io-rdb-mssql" && (
-        <RemoteDbSync subTab="mssql" isReadOnly={isReadOnly} />
       )}
 
       {/* ── Other pages ── */}

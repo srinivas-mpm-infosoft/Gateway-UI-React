@@ -403,6 +403,7 @@ export default function ModbusTCP({ config, onSave, setConfig, role = "admin", i
                 isReadOnly={isReadOnly}
                 isScada={true}
                 role={role}
+                localDbCfg={localCfg.Database?.local}
                 onChange={(updater) => updateScada(activeScadaIdx, updater)}
               />
             </div>
@@ -462,6 +463,7 @@ export default function ModbusTCP({ config, onSave, setConfig, role = "admin", i
                 isReadOnly={isReadOnly}
                 isScada={false}
                 role={role}
+                localDbCfg={localCfg.Database?.local}
                 onChange={(updater) => updateHmi(activeHmiIdx, updater)}
               />
             </div>

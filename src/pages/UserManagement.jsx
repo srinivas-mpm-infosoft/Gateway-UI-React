@@ -41,8 +41,8 @@ export const PERMISSIONS = [
   // Data Storage
   { id: "database.view",            label: "View Data Storage",     category: "Data Storage" },
   { id: "database.configure",       label: "Configure Data Storage",category: "Data Storage" },
-  { id: "remotedb.view",            label: "View Remote DB Sync",   category: "Data Storage" },
-  { id: "remotedb.configure",       label: "Configure Remote DB Sync", category: "Data Storage" },
+  { id: "remotedb.view",            label: "View MSSQL Connectivity",   category: "Data Storage" },
+  { id: "remotedb.configure",       label: "Configure MSSQL Connectivity", category: "Data Storage" },
   // Administration
   { id: "admin.view",               label: "View Admin Settings",   category: "Administration" },
   { id: "admin.configure",          label: "Configure Admin Settings", category: "Administration" },

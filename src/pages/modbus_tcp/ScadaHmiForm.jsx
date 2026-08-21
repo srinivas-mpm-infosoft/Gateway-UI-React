@@ -881,7 +881,7 @@
 
 
 import React from "react";
-import { X } from "lucide-react";
+import { X, Database, Cloud, Server } from "lucide-react";
 import DBSettings from "../DBSettings";
 
 const inp =
@@ -896,12 +896,172 @@ const DATA_TYPES = ["STRING", "INT", "FLOAT", "BOOL", "DATETIME"];
 
 const HTTP_METHODS = ["GET", "POST", "PUT", "DELETE"];
 
+const DEST_CONFIG = [
+  { key: "local_db", label: "Local DB", icon: Database, color: "indigo" },
+  { key: "sandman_local", label: "Sandman Local Cloud", icon: Cloud, color: "sky" },
+  { key: "sandman_prod", label: "Sandman Production", icon: Server, color: "violet" },
+];
+
+const COLOR_MAP = {
+  indigo: { ring: "#6366f1", bg: "#eef2ff", text: "#4338ca", border: "#c7d2fe" },
+  sky: { ring: "#0ea5e9", bg: "#f0f9ff", text: "#0369a1", border: "#bae6fd" },
+  violet: { ring: "#8b5cf6", bg: "#f5f3ff", text: "#6d28d9", border: "#ddd6fe" },
+};
+
+function Toggle({ checked, onChange, disabled }) {
+  return (
+    <label className="relative inline-flex items-center cursor-pointer">
+      <input
+        type="checkbox"
+        className="sr-only peer"
+        checked={checked}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+      <div className="w-9 h-5 bg-slate-300 rounded-full peer peer-checked:bg-indigo-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4 peer-focus:ring-2 peer-focus:ring-indigo-200" />
+    </label>
+  );
+}
+
+// Local DB destination — connection fields are display-only, sourced live from config.Database.local.cred.
+function LocalDbCard({ dest, localDbCfg, sourceTableName, onChange, isReadOnly }) {
+  const colors = COLOR_MAP.indigo;
+  const cred = localDbCfg?.cred ?? {};
+
+  return (
+    <div
+      className="rounded-xl border-2 flex flex-col transition-all"
+      style={{
+        borderColor: dest.enabled ? colors.ring : "#e2e8f0",
+        background: dest.enabled ? colors.bg : "#f8fafc",
+        opacity: dest.enabled ? 1 : 0.65,
+      }}>
+      <div
+        className="flex items-center justify-between px-4 py-3 border-b"
+        style={{ borderColor: dest.enabled ? colors.border : "#e2e8f0" }}>
+        <div className="flex items-center gap-2">
+          <Database size={14} style={{ color: dest.enabled ? colors.ring : "#94a3b8" }} />
+          <span className="text-xs font-bold" style={{ color: dest.enabled ? colors.text : "#94a3b8" }}>
+            Local DB
+          </span>
+        </div>
+        <Toggle checked={dest.enabled} onChange={(v) => onChange("enabled", v)} disabled={isReadOnly} />
+      </div>
+
+      <div className="p-4 flex flex-col gap-2.5">
+        <div>
+          <label className="text-[10px] text-slate-400 mb-1 block">Host / IP Address</label>
+          <input type="text" disabled value={cred.host ?? ""} className={inp} />
+        </div>
+        <div>
+          <label className="text-[10px] text-slate-400 mb-1 block">Port</label>
+          <input type="text" disabled value={cred.port ?? ""} className={inp} />
+        </div>
+        <div>
+          <label className="text-[10px] text-slate-400 mb-1 block">Username</label>
+          <input type="text" disabled value={cred.user ?? ""} className={inp} />
+        </div>
+        <div>
+          <label className="text-[10px] text-slate-400 mb-1 block">Password</label>
+          <input type="password" disabled value={cred.password ?? ""} className={inp} />
+        </div>
+        <div>
+          <label className="text-[10px] text-slate-400 mb-1 block">Database (optional)</label>
+          <input
+            type="text"
+            value={dest.database}
+            disabled={!dest.enabled || isReadOnly}
+            placeholder={cred.database ? `Default: ${cred.database}` : "same as config database"}
+            onChange={(e) => onChange("database", e.target.value)}
+            className={inp}
+          />
+        </div>
+        <div>
+          <label className="text-[10px] text-slate-400 mb-1 block">Table Name (optional)</label>
+          <input
+            type="text"
+            value={dest.table_name}
+            disabled={!dest.enabled || isReadOnly}
+            placeholder={sourceTableName || "same as source table"}
+            onChange={(e) => onChange("table_name", e.target.value)}
+            className={inp}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SandmanCard({ destKey, dest, sourceTableName, onChange, isReadOnly }) {
+  const cfg = DEST_CONFIG.find((d) => d.key === destKey);
+  const colors = COLOR_MAP[cfg.color];
+  const Icon = cfg.icon;
+  const disabled = !dest.enabled || isReadOnly;
+
+  return (
+    <div
+      className="rounded-xl border-2 flex flex-col transition-all"
+      style={{
+        borderColor: dest.enabled ? colors.ring : "#e2e8f0",
+        background: dest.enabled ? colors.bg : "#f8fafc",
+        opacity: dest.enabled ? 1 : 0.65,
+      }}>
+      <div
+        className="flex items-center justify-between px-4 py-3 border-b"
+        style={{ borderColor: dest.enabled ? colors.border : "#e2e8f0" }}>
+        <div className="flex items-center gap-2">
+          <Icon size={14} style={{ color: dest.enabled ? colors.ring : "#94a3b8" }} />
+          <span className="text-xs font-bold" style={{ color: dest.enabled ? colors.text : "#94a3b8" }}>
+            {cfg.label}
+          </span>
+        </div>
+        <Toggle checked={dest.enabled} onChange={(v) => onChange("enabled", v)} disabled={isReadOnly} />
+      </div>
+
+      <div className="p-4 flex flex-col gap-2.5">
+        <div>
+          <label className="text-[10px] text-slate-400 mb-1 block">Host / IP Address</label>
+          <input type="text" value={dest.host} disabled={disabled} placeholder="192.168.1.100"
+            onChange={(e) => onChange("host", e.target.value)} className={inp} />
+        </div>
+        <div>
+          <label className="text-[10px] text-slate-400 mb-1 block">Port</label>
+          <input type="number" value={dest.port ?? 1433} disabled={disabled}
+            onChange={(e) => onChange("port", Number(e.target.value) || 1433)} className={inp} />
+        </div>
+        <div>
+          <label className="text-[10px] text-slate-400 mb-1 block">Username</label>
+          <input type="text" value={dest.username} disabled={disabled} placeholder="sa"
+            onChange={(e) => onChange("username", e.target.value)} className={inp} />
+        </div>
+        <div>
+          <label className="text-[10px] text-slate-400 mb-1 block">Password</label>
+          <input type="password" value={dest.password} disabled={disabled}
+            onChange={(e) => onChange("password", e.target.value)} className={inp} />
+        </div>
+        <div>
+          <label className="text-[10px] text-slate-400 mb-1 block">Database</label>
+          <input type="text" value={dest.database} disabled={disabled} placeholder="target_db"
+            onChange={(e) => onChange("database", e.target.value)} className={inp} />
+        </div>
+        <div>
+          <label className="text-[10px] text-slate-400 mb-1 block">Table Name (optional)</label>
+          <input type="text" value={dest.table_name} disabled={disabled}
+            placeholder={sourceTableName || "same as source table"}
+            onChange={(e) => onChange("table_name", e.target.value)} className={inp} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ScadaHmiForm({
   device,
   onChange,
   isReadOnly,
   isScada = false,
   role,
+  localDbCfg,
 }) {
   // ---------------------------------------------------------------------------
   // Protocols
@@ -922,6 +1082,9 @@ export default function ScadaHmiForm({
     normalizedProtocol === "FILE SHARING";
 
   const isModbusTcp = normalizedProtocol === "MODBUS TCP";
+
+  const isMssql =
+    normalizedProtocol === "MSSQL CONNECTIVITY" || normalizedProtocol === "MSSQL";
 
   // ---------------------------------------------------------------------------
   // Generic updaters
@@ -1094,23 +1257,43 @@ export default function ScadaHmiForm({
       registers.filter((_, idx) => idx !== i),
     );
 
+  // ---------------------------------------------------------------------------
+  // MSSQL Destinations
+  // ---------------------------------------------------------------------------
+
+  const destinations = device?.data_source?.destinations ?? {};
+
+  const updDestination = (destKey, field, value) =>
+    onChange((d) => ({
+      ...d,
+      data_source: {
+        ...(d.data_source ?? {}),
+        destinations: {
+          ...(d.data_source?.destinations ?? {}),
+          [destKey]: { ...(d.data_source?.destinations?.[destKey] ?? {}), [field]: value },
+        },
+      },
+    }));
+
   return (
     <div className="space-y-5">
-      {/* Database Storage — always at top */}
-      <div>
-        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">
-          Database Storage
-        </span>
-        <DBSettings
-          prefix={isScada ? "scada" : "hmi"}
-          db={device.db}
-          role={role}
-          isReadOnly={isReadOnly}
-          onChange={(field, value) =>
-            onChange((d) => ({ ...d, db: { ...(d.db ?? {}), [field]: value } }))
-          }
-        />
-      </div>
+      {/* Database Storage — hidden for MSSQL Connectivity, which has its own destinations below */}
+      {!isMssql && (
+        <div>
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">
+            Database Storage
+          </span>
+          <DBSettings
+            prefix={isScada ? "scada" : "hmi"}
+            db={device.db}
+            role={role}
+            isReadOnly={isReadOnly}
+            onChange={(field, value) =>
+              onChange((d) => ({ ...d, db: { ...(d.db ?? {}), [field]: value } }))
+            }
+          />
+        </div>
+      )}
 
       {/* System */}
       <div>
@@ -1145,7 +1328,9 @@ export default function ScadaHmiForm({
                       ? "File Based Sharing"
                       : isModbusTcp
                         ? "Modbus TCP"
-                        : "HTTP / HTTPS"
+                        : isMssql
+                          ? "MSSQL Connectivity"
+                          : "HTTP / HTTPS"
               }
               disabled={isReadOnly}
               onChange={(e) => upd("protocol", e.target.value)}
@@ -1154,6 +1339,7 @@ export default function ScadaHmiForm({
               <option>OPC UA</option>
               <option>File Based Sharing</option>
               <option>Modbus TCP</option>
+              <option>MSSQL Connectivity</option>
             </select>
           </div>
         </div>
@@ -1690,6 +1876,148 @@ export default function ScadaHmiForm({
             className="w-full py-2 border border-dashed border-slate-300 rounded-xl text-xs">
             + Add Register
           </button>
+        </>
+      )}
+
+      {/* MSSQL CONNECTIVITY */}
+      {isMssql && (
+        <>
+          <div>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-3">
+              MSSQL Connection
+            </span>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[10px] text-slate-400 mb-1 block">
+                  Host / IP Address
+                </label>
+                <input
+                  type="text"
+                  value={device.connection?.host ?? ""}
+                  placeholder="192.168.1.100"
+                  disabled={isReadOnly}
+                  onChange={(e) => updNested("connection", "host", e.target.value)}
+                  className={inp}
+                />
+              </div>
+              <div>
+                <label className="text-[10px] text-slate-400 mb-1 block">Port</label>
+                <input type="text" value="1433" disabled className={inp} />
+              </div>
+              <div>
+                <label className="text-[10px] text-slate-400 mb-1 block">Username</label>
+                <input
+                  type="text"
+                  value={device.connection?.username ?? ""}
+                  placeholder="sa"
+                  disabled={isReadOnly}
+                  onChange={(e) => updNested("connection", "username", e.target.value)}
+                  className={inp}
+                />
+              </div>
+              <div>
+                <label className="text-[10px] text-slate-400 mb-1 block">Password</label>
+                <input
+                  type="password"
+                  value={device.connection?.password ?? ""}
+                  disabled={isReadOnly}
+                  onChange={(e) => updNested("connection", "password", e.target.value)}
+                  className={inp}
+                />
+              </div>
+              <div>
+                <label className="text-[10px] text-slate-400 mb-1 block">Database</label>
+                <input
+                  type="text"
+                  value={device.connection?.database ?? ""}
+                  placeholder="production_db"
+                  disabled={isReadOnly}
+                  onChange={(e) => updNested("connection", "database", e.target.value)}
+                  className={inp}
+                />
+              </div>
+              <div>
+                <label className="text-[10px] text-slate-400 mb-1 block">Table Name</label>
+                <input
+                  type="text"
+                  value={device.connection?.table_name ?? ""}
+                  placeholder="sensor_readings"
+                  disabled={isReadOnly}
+                  onChange={(e) => updNested("connection", "table_name", e.target.value)}
+                  className={inp}
+                />
+              </div>
+              <div className="col-span-2">
+                <label className="text-[10px] text-slate-400 mb-1 block">
+                  Polling Interval
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="1"
+                    value={device.connection?.polling_interval ?? 60}
+                    disabled={isReadOnly}
+                    onChange={(e) =>
+                      updNested(
+                        "connection",
+                        "polling_interval",
+                        Number(e.target.value) || 1,
+                      )
+                    }
+                    className={`${inp} w-28`}
+                  />
+                  <select
+                    value={device.connection?.polling_interval_unit ?? "sec"}
+                    disabled={isReadOnly}
+                    onChange={(e) =>
+                      updNested("connection", "polling_interval_unit", e.target.value)
+                    }
+                    className={`${inp} w-24`}>
+                    <option value="sec">Sec</option>
+                    <option value="min">Min</option>
+                    <option value="hour">Hour</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-3">
+              Destinations
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <LocalDbCard
+                dest={destinations.local_db ?? { enabled: false, database: "", table_name: "" }}
+                localDbCfg={localDbCfg}
+                sourceTableName={device.connection?.table_name}
+                onChange={(f, v) => updDestination("local_db", f, v)}
+                isReadOnly={isReadOnly}
+              />
+              <SandmanCard
+                destKey="sandman_local"
+                dest={
+                  destinations.sandman_local ?? {
+                    enabled: false, host: "", port: 1433, username: "", password: "", database: "", table_name: "",
+                  }
+                }
+                sourceTableName={device.connection?.table_name}
+                onChange={(f, v) => updDestination("sandman_local", f, v)}
+                isReadOnly={isReadOnly}
+              />
+              <SandmanCard
+                destKey="sandman_prod"
+                dest={
+                  destinations.sandman_prod ?? {
+                    enabled: false, host: "", port: 1433, username: "", password: "", database: "", table_name: "",
+                  }
+                }
+                sourceTableName={device.connection?.table_name}
+                onChange={(f, v) => updDestination("sandman_prod", f, v)}
+                isReadOnly={isReadOnly}
+              />
+            </div>
+          </div>
         </>
       )}
 

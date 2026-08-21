@@ -4,7 +4,7 @@ import {
   Settings, Lock, LogOut,
   Settings2, Cpu, Network,
   ChevronDown, Volume2, BarChart3, FileText, Activity,
-  Users, RefreshCw,
+  Users,
 } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
 
@@ -30,7 +30,6 @@ const IO_SUB_ITEMS = [
   { id: "io-plc",        icon: Network,   label: "PLC"             },
   { id: "io-scada",      icon: Network,   label: "SCADA PC"        },
   { id: "io-hmi",        icon: Settings2, label: "HMI"             },
-  { id: "io-rdb-mssql",  icon: RefreshCw, label: "Remote DB Sync", requiresAdmin: true },
   // { id: "io-mqtt",       icon: Wifi,      label: "MQTT"       },
 ];
 
