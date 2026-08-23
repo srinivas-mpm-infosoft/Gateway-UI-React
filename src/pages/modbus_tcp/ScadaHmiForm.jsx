@@ -1883,6 +1883,19 @@ export default function ScadaHmiForm({
       {isMssql && (
         <>
           <div>
+            <label className="text-[10px] text-slate-400 mb-1 block">
+              Name
+            </label>
+            <input
+              type="text"
+              value={device?.label ?? ""}
+              placeholder="e.g. SMC PC"
+              disabled={isReadOnly}
+              onChange={(e) => upd("label", e.target.value)}
+              className={inp}
+            />
+          </div>
+          <div>
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-3">
               MSSQL Connection
             </span>
