@@ -184,6 +184,7 @@ export default function AnalogIO({ config, onSave, isReadOnly = false }) {
         />
       </div>
 
+      <div className="overflow-x-auto">
       <table className="channel-table">
         <thead>
           <tr>
@@ -296,11 +297,13 @@ export default function AnalogIO({ config, onSave, isReadOnly = false }) {
           })}
         </tbody>
       </table>
+      </div>
       <button type="button" onClick={addAI} disabled={isReadOnly} className="button-primary">
         + Add Analog Input
       </button>
 
       <h3 style={{ marginTop: 20 }}>Analog Output</h3>
+      <div className="overflow-x-auto">
       <table className="channel-table">
         <thead>
           <tr>
@@ -401,6 +404,7 @@ export default function AnalogIO({ config, onSave, isReadOnly = false }) {
           })}
         </tbody>
       </table>
+      </div>
       <button type="button" onClick={addAO} disabled={isReadOnly} className="button-primary">
         + Add Analog Output
       </button>

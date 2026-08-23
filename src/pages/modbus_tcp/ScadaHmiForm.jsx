@@ -226,7 +226,7 @@
 //           </div>
 
 //           {isScada && (
-//             <div className="col-span-2">
+//             <div className="col-span-1 sm:col-span-2">
 //               <label className="text-[10px] text-slate-400 mb-1 block">
 //                 SCADA Software
 //               </label>
@@ -400,7 +400,7 @@
 //                 />
 //               </div>
 
-//               <div className="col-span-2">
+//               <div className="col-span-1 sm:col-span-2">
 //                 <label className="text-[10px] text-slate-400 mb-1 block">
 //                   Base URL
 //                 </label>
@@ -671,7 +671,7 @@
 
 //             <div className="grid grid-cols-2 gap-3">
 
-//               <div className="col-span-2">
+//               <div className="col-span-1 sm:col-span-2">
 //                 <label className="text-[10px] text-slate-400 mb-1 block">
 //                   Endpoint URL
 //                 </label>
@@ -1301,7 +1301,7 @@ export default function ScadaHmiForm({
           System
         </span>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="hidden">
             <label className="text-[10px] text-slate-400 mb-1 block">OS</label>
             <select
@@ -1353,8 +1353,8 @@ export default function ScadaHmiForm({
               HTTP Connection
             </span>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="col-span-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="col-span-1 sm:col-span-2">
                 <label className="text-[10px] text-slate-400 mb-1 block">
                   Base URL
                 </label>
@@ -1389,7 +1389,7 @@ export default function ScadaHmiForm({
                   </button>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
                     <label className="text-[10px] text-slate-400 mb-1 block">
                       Name
@@ -1535,8 +1535,8 @@ export default function ScadaHmiForm({
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-3">
               OPC UA Connection
             </span>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="col-span-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="col-span-1 sm:col-span-2">
                 <label className="text-[10px] text-slate-400 mb-1 block">
                   Endpoint URL
                 </label>
@@ -1648,8 +1648,8 @@ export default function ScadaHmiForm({
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-3">
               File Sharing
             </span>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="col-span-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="col-span-1 sm:col-span-2">
                 <label className="text-[10px] text-slate-400 mb-1 block">
                   File Location
                 </label>
@@ -1762,7 +1762,7 @@ export default function ScadaHmiForm({
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-3">
               Modbus TCP Connection
             </span>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-[10px] text-slate-400 mb-1 block">
                   IP Address
@@ -1886,7 +1886,7 @@ export default function ScadaHmiForm({
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-3">
               MSSQL Connection
             </span>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-[10px] text-slate-400 mb-1 block">
                   Host / IP Address
@@ -1947,7 +1947,7 @@ export default function ScadaHmiForm({
                   className={inp}
                 />
               </div>
-              <div className="col-span-2">
+              <div className="col-span-1 sm:col-span-2">
                 <label className="text-[10px] text-slate-400 mb-1 block">
                   Polling Interval
                 </label>

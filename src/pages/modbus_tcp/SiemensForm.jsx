@@ -129,7 +129,7 @@ export default function SiemensForm({ plc, onChange, role, isReadOnly }) {
       {/* Credentials */}
       <div>
         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-3">Credentials</span>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
             { label: "IP Address", field: "ip",   type: "text",   placeholder: "192.168.0.1" },
             { label: "Rack",       field: "rack",  type: "number", placeholder: "0" },

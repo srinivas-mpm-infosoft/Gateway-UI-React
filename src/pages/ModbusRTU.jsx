@@ -182,8 +182,8 @@ function Modal({ title, onClose, children, width = 460 }) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div
-        className="bg-white rounded-2xl shadow-2xl flex flex-col"
-        style={{ width, maxHeight: "90vh" }}
+        className="w-full bg-white rounded-2xl shadow-2xl flex flex-col"
+        style={{ maxWidth: width, maxHeight: "90vh" }}
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
           <h3 className="font-semibold text-slate-700 text-sm">{title}</h3>
@@ -811,7 +811,7 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
                     </select>
                   </div>
                 </label>
-                <div className="flex justify-end gap-3 pb-1">
+                <div className="flex flex-wrap justify-end gap-3 pb-1">
                   <label className="flex items-center gap-2.5 text-sm text-slate-600 cursor-pointer">
                     <input
                       type="checkbox"
@@ -1148,7 +1148,7 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
                         <div className="px-4 py-4 space-y-4 bg-white">
                           <div className="space-y-3">
                             <span className={lbl}>Notification</span>
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               <div>
                                 <span className="text-[10px] text-slate-400 mb-1 block">Email</span>
                                 <input type="email" placeholder="alerts@example.com"
@@ -1191,7 +1191,7 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
                               )}
                             </div>
                             {isSuperAdmin && aType === "do_pin" && (
-                              <div className="grid grid-cols-2 gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
                                 <div>
                                   <span className="text-[10px] text-slate-400 mb-1 block">Digital Output Pin</span>
                                   <select value={a.do_pin ?? ""} onChange={(e) => updAlert(ai, { do_pin: e.target.value })} className={`${sel} w-full`}>
@@ -1461,7 +1461,7 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
                               )}
                             </div>
                             {isSuperAdmin && aType === "do_pin" && (
-                              <div className="grid grid-cols-2 gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
                                 <div>
                                   <span className="text-[10px] text-slate-400 mb-1 block">Digital Output Pin</span>
                                   <select value={a.do_pin ?? ""} onChange={(e) => updAlert(ai, { do_pin: e.target.value })} className={`${sel} w-full`}>

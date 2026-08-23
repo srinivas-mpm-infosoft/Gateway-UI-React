@@ -142,31 +142,31 @@ export default function IOSettings({ role = "admin", isReadOnly, subTab = "gener
               >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {[
-                    {
-                      name: "modbus",
-                      label: "Modbus RTU Protocol",
-                      checked: config.ioSettings?.settings?.modbus,
-                    },
-                    {
-                      name: "plc",
-                      label: "PLC",
-                      checked: config.ioSettings?.settings?.plc,
-                    },
+                    // {
+                    //   name: "modbus",
+                    //   label: "Modbus RTU Protocol",
+                    //   checked: config.ioSettings?.settings?.modbus,
+                    // },
+                    // {
+                    //   name: "plc",
+                    //   label: "PLC",
+                    //   checked: config.ioSettings?.settings?.plc,
+                    // },
                     {
                       name: "scada",
                       label: "SCADA",
                       checked: config.ioSettings?.settings?.scada,
                     },
-                    {
-                      name: "hmi",
-                      label: "HMI",
-                      checked: config.ioSettings?.settings?.hmi,
-                    },
-                    {
-                      name: "remoteDbSync",
-                      label: "MSSQL Connectivity",
-                      checked: config.ioSettings?.settings?.remoteDbSync,
-                    },
+                    // {
+                    //   name: "hmi",
+                    //   label: "HMI",
+                    //   checked: config.ioSettings?.settings?.hmi,
+                    // },
+                    // {
+                    //   name: "remoteDbSync",
+                    //   label: "MSSQL Connectivity",
+                    //   checked: config.ioSettings?.settings?.remoteDbSync,
+                    // },
                   ].map((item) => (
                     <label
                       key={item.name}

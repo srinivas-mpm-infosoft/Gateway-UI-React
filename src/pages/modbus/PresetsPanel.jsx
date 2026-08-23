@@ -225,8 +225,8 @@ export default function PresetsPanel({
 
 function Overlay({ children, onClose, width = 360 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.5)" }}>
-      <div className="bg-white rounded-xl shadow-2xl p-6 relative" style={{ width, maxHeight: "85vh", overflowY: "auto" }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
+      <div className="w-full bg-white rounded-xl shadow-2xl p-6 relative" style={{ maxWidth: width, maxHeight: "85vh", overflowY: "auto" }}>
         <button onClick={onClose} className="absolute top-4 right-4 p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-600">
           <X size={15} />
         </button>

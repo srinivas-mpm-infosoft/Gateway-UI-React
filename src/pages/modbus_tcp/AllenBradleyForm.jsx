@@ -75,7 +75,7 @@ export default function AllenBradleyForm({ plc, plcType, onChange, role, isReadO
       {/* Credentials */}
       <div>
         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-3">Credentials</span>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="text-[10px] text-slate-400 mb-1 block">IP Address</label>
             <input

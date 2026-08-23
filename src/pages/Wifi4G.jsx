@@ -247,10 +247,10 @@ export default function Wifi4G({ isReadOnly = false }) {
         </p>
       </div>
 
-      <div className="flex flex-1 overflow-hidden p-6 gap-8">
+      <div className="flex flex-col md:flex-row flex-1 overflow-hidden p-4 md:p-6 gap-4 md:gap-8">
 
         {/* Sidebar */}
-        <aside className="w-64 flex-shrink-0 h-full">
+        <aside className="w-full md:w-64 md:flex-shrink-0 md:h-full">
           <nav className="space-y-1">
             {tabs.map((t) => {
               const Icon = t.icon;
@@ -526,7 +526,7 @@ export default function Wifi4G({ isReadOnly = false }) {
 
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
                               {[
                                 {
@@ -559,7 +559,7 @@ export default function Wifi4G({ isReadOnly = false }) {
                                   key={f.key}
                                   className={
                                     f.span
-                                      ? "col-span-2"
+                                      ? "col-span-1 sm:col-span-2"
                                       : "col-span-1"
                                   }
                                 >

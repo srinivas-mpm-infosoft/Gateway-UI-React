@@ -212,10 +212,10 @@ export default function AdminSettings({ isReadOnly }) {
       </div>
 
       {/* Main tab strip */}
-      <div className="flex border-b border-slate-200 mb-5">
+      <div className="flex overflow-x-auto border-b border-slate-200 mb-5">
         {MAIN_TABS.map((t) => (
           <button key={t} onClick={() => setActiveTab(t)}
-            className={`px-5 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
+            className={`shrink-0 whitespace-nowrap px-5 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
               activeTab === t
                 ? "border-zinc-700 text-zinc-800"
                 : "border-transparent text-slate-400 hover:text-slate-600"
@@ -303,8 +303,7 @@ export default function AdminSettings({ isReadOnly }) {
                 )}
                 <div className="space-y-2">
                   {rs485.map((p, i) => (
-                    <div key={i} className="grid gap-3 items-end rounded-xl border border-slate-200 bg-slate-50 px-4 py-3"
-                      style={{ gridTemplateColumns: "1fr 1fr auto" }}>
+                    <div key={i} className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-3 items-end rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
                       <div>
                         <label className={lbl}>Port Name</label>
                         <input value={p.name ?? ""} placeholder="Display name" disabled={isReadOnly}
@@ -342,8 +341,7 @@ export default function AdminSettings({ isReadOnly }) {
                 )}
                 <div className="space-y-2">
                   {engUnits.map((row, i) => (
-                    <div key={i} className="grid gap-3 items-end rounded-xl border border-slate-200 bg-slate-50 px-4 py-3"
-                      style={{ gridTemplateColumns: "1fr 1fr auto" }}>
+                    <div key={i} className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-3 items-end rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
                       <div>
                         <label className={lbl}>Sensor Type</label>
                         <input value={row.type ?? ""} placeholder="e.g. temperature" disabled={isReadOnly}

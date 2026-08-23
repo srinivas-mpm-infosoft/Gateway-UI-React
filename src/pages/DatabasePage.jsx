@@ -176,7 +176,7 @@ export default function DatabasePage({ isReadOnly = false }) {
                         type={key === "password" ? "password" : "text"}
                         value={val}
                         onChange={(e) => updateCred(name, key, e.target.value)}
-                        className="w-100 block w-full px-4 py-2 text-slate-900 border border-slate-300 rounded-lg bg-slate-50 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-slate-100 disabled:text-slate-400 transition-all sm:text-sm"
+                        className="block w-full px-4 py-2 text-slate-900 border border-slate-300 rounded-lg bg-slate-50 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-slate-100 disabled:text-slate-400 transition-all sm:text-sm"
                         placeholder={`Enter ${key}...`}
                       />
                     </div>

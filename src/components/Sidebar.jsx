@@ -18,7 +18,7 @@ const NAV_ITEMS = [
   //{ id: "audio-alerts-group", icon: Volume2,    label: "Audio Alerts",    isAAGroup: true },
   { id: "Wifi/4G",            icon: Wifi,       label: "WiFi / 4G / Ethernet" },
   { id: "database",           icon: Database,   label: "Data Storage",    domId: "nav-database",       requiresAdmin: true },
-  { id: "admin-settings",     icon: Settings,   label: "Admin Settings",  domId: "nav-admin-settings", requiresAdmin: true },
+  // { id: "admin-settings",     icon: Settings,   label: "Admin Settings",  domId: "nav-admin-settings", requiresAdmin: true },
   { id: "user-management",    icon: Users,      label: "User Management", domId: "nav-user-mgmt",      requiresSuper: true },
   { id: "change-password",    icon: Lock,       label: "Change Password" },
   { id: "logout",             icon: LogOut,     label: "Logout" },
@@ -26,10 +26,10 @@ const NAV_ITEMS = [
 
 const IO_SUB_ITEMS = [
   { id: "io-general",    icon: Settings2, label: "General"         },
-  { id: "io-modbus-rtu", icon: Cpu,       label: "Modbus RTU"      },
-  { id: "io-plc",        icon: Network,   label: "PLC"             },
+  // { id: "io-modbus-rtu", icon: Cpu,       label: "Modbus RTU"      },
+  // { id: "io-plc",        icon: Network,   label: "PLC"             },
   { id: "io-scada",      icon: Network,   label: "SCADA PC"        },
-  { id: "io-hmi",        icon: Settings2, label: "HMI"             },
+  // { id: "io-hmi",        icon: Settings2, label: "HMI"             },
   // { id: "io-mqtt",       icon: Wifi,      label: "MQTT"       },
 ];
 
@@ -48,7 +48,7 @@ const AA_SUB_ITEMS = [
 
 const AA_PANEL_IDS = new Set(AA_SUB_ITEMS.map((i) => i.id));
 
-export default function Sidebar({ active, onSelect, role }) {
+export default function Sidebar({ active, onSelect, role, mobileOpen = false, onCloseMobile }) {
   const nr = normalizeRole(role);
   const rolePermissions = useAuthStore((s) => s.rolePermissions);
 
@@ -79,11 +79,26 @@ export default function Sidebar({ active, onSelect, role }) {
   };
   const allowedAASubs = AA_SUB_ITEMS.filter((sub) => can(sub.perm));
 
+  const handleSelect = (id) => {
+    onSelect(id);
+    onCloseMobile?.();
+  };
+
   return (
-    <nav
-      className="w-56 h-full flex flex-col border-r border-white/5"
-      style={{ background: "#111827" }}
-    >
+    <>
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 md:hidden"
+          onClick={onCloseMobile}
+          aria-hidden="true"
+        />
+      )}
+      <nav
+        className={`fixed inset-y-0 left-0 z-50 w-56 h-full flex flex-col border-r border-white/5 transform transition-transform duration-300 ease-in-out md:static md:translate-x-0 md:transition-none ${
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+        style={{ background: "#111827" }}
+      >
       {/* Logo */}
       <div className="px-4 py-4 border-b border-white/5 flex items-center gap-2.5">
         <div
@@ -134,7 +149,7 @@ export default function Sidebar({ active, onSelect, role }) {
                           return (
                             <button
                               key={sub.id}
-                              onClick={() => onSelect(sub.id)}
+                              onClick={() => handleSelect(sub.id)}
                               className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded text-[12.5px] font-medium transition-colors duration-100"
                               style={isActive ? { background: "#1e3a5f33", color: "#93c5fd" } : { color: "#4b5563" }}
                               onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.color = "#9ca3af"; }}
@@ -185,7 +200,7 @@ export default function Sidebar({ active, onSelect, role }) {
                       return (
                         <button
                           key={sub.id}
-                          onClick={() => onSelect(sub.id)}
+                          onClick={() => handleSelect(sub.id)}
                           className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded text-[12.5px] font-medium transition-colors duration-100"
                           style={isActive ? { background: "#1e3a5f33", color: "#93c5fd" } : { color: "#4b5563" }}
                           onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.color = "#9ca3af"; }}
@@ -208,7 +223,7 @@ export default function Sidebar({ active, onSelect, role }) {
           return (
             <li key={item.id} id={item.domId}>
               <button
-                onClick={() => onSelect(item.id)}
+                onClick={() => handleSelect(item.id)}
                 className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-100"
                 style={isActive ? { background: "#1e3a5f22", color: "#93c5fd", borderLeft: "2px solid #3b82f6" } : { color: "#6b7280" }}
                 onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.color = "#d1d5db"; }}
@@ -229,6 +244,7 @@ export default function Sidebar({ active, onSelect, role }) {
           Gateway v2.0
         </p>
       </div>
-    </nav>
+      </nav>
+    </>
   );
 }

@@ -171,6 +171,7 @@ export default function DigitalIO({ config, onSave, isReadOnly = false }) {
         </select>
       </label>
 
+      <div className="overflow-x-auto">
       <table className="channel-table" style={{ marginTop: 12, width: "100%" }}>
         <thead>
           <tr>
@@ -220,11 +221,13 @@ export default function DigitalIO({ config, onSave, isReadOnly = false }) {
           ))}
         </tbody>
       </table>
+      </div>
       <button type="button" className="button-primary" disabled={isReadOnly} onClick={addDI}>
         + Add Digital Input
       </button>
 
       <h3 style={{ marginTop: 20 }}>Digital Output</h3>
+      <div className="overflow-x-auto">
       <table className="channel-table" style={{ width: "100%" }}>
         <thead>
           <tr>
@@ -276,11 +279,13 @@ export default function DigitalIO({ config, onSave, isReadOnly = false }) {
           ))}
         </tbody>
       </table>
+      </div>
       <button type="button" className="button-primary" disabled={isReadOnly} onClick={addDO}>
         + Add Digital Output
       </button>
 
       <h3 style={{ marginTop: 20 }}>Relay Output</h3>
+      <div className="overflow-x-auto">
       <table className="channel-table" style={{ width: "100%" }}>
         <thead>
           <tr>
@@ -342,6 +347,7 @@ export default function DigitalIO({ config, onSave, isReadOnly = false }) {
           ))}
         </tbody>
       </table>
+      </div>
       <button type="button" className="button-primary" disabled={isReadOnly} onClick={addRelay}>
         + Add Relay
       </button>

@@ -13,6 +13,7 @@ export default function App() {
   const [activePanel, setActivePanel] = useState("io-general");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const setUser = useAuthStore((state) => state.setUser);
   const user = useAuthStore((state) => state.user);
 
@@ -64,7 +65,7 @@ export default function App() {
       <div className="flex flex-col h-screen overflow-hidden bg-[#dfe3ea]">
         {/* Top Bar - Fixed height, won't scroll */}
         <div className="flex-shrink-0">
-          <WindowBar /> 
+          <WindowBar onMenuClick={() => setSidebarOpen((v) => !v)} />
         </div>
 
         {/* Body Area - Takes remaining height */}
@@ -72,7 +73,13 @@ export default function App() {
 
           {/* Sidebar - Fixed width, won't scroll with content */}
           <div className="flex-shrink-0">
-            <Sidebar active={activePanel} onSelect={setActivePanel} role={user?.role} />
+            <Sidebar
+              active={activePanel}
+              onSelect={setActivePanel}
+              role={user?.role}
+              mobileOpen={sidebarOpen}
+              onCloseMobile={() => setSidebarOpen(false)}
+            />
           </div>
 
           {/* Main Content - THIS is the only part that scrolls */}

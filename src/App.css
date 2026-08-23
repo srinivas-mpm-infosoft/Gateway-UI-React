@@ -6,7 +6,6 @@ html,body,#root {
   height: 100%;
 }
 .window-bar {
-  height: 28px;
   background: #FFD366;
   border-bottom: 2px solid #aaa;
 }
@@ -14,29 +13,6 @@ html,body,#root {
   display: flex;
   min-height: 100vh;
   max-width: none;
-}
-#side-nav {
-  width: 210px;
-  background: #34393b;
-  color: #bce6f8;
-   align-self: stretch; 
-  border-right: 2px solid #eee;
-}
-#side-nav ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-#side-nav li {
-  padding: 16px 18px;
-  font-size: 16px;
-  cursor: pointer;
-  border-bottom: 1px solid #333;
-  transition: background .2s;
-}
-#side-nav li.active, #side-nav li:hover {
-  background: #3e838f;
-  color: #fff;
 }
 #main-panel {
   flex: 1;
@@ -124,10 +100,6 @@ input[type="text"], select {
   margin-left: 10px;
   margin-bottom: 12px;
 }
-@media (max-width: 900px) {
-  #side-nav { width: 120px; font-size: 13px; }
-}
-
 section.analog-input{
   display: flex;
   flex-direction: row;
