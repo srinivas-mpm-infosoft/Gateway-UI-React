@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import {
   Sliders, Wifi, Database,
@@ -27,8 +28,8 @@ const NAV_ITEMS = [
 const IO_SUB_ITEMS = [
   { id: "io-general",    icon: Settings2, label: "General"         },
   { id: "io-modbus-rtu", icon: Cpu,       label: "Modbus RTU"      },
-  { id: "io-plc",        icon: Network,   label: "PLC"             },
-  { id: "io-scada",      icon: Network,   label: "SCADA PC"        },
+  // { id: "io-plc",        icon: Network,   label: "PLC"             },
+  // { id: "io-scada",      icon: Network,   label: "SCADA PC"        },
   // { id: "io-hmi",        icon: Settings2, label: "HMI"             },
   // { id: "io-mqtt",       icon: Wifi,      label: "MQTT"       },
 ];

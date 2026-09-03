@@ -1237,7 +1237,7 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
                                             <span className="text-[10px] text-slate-400 mb-1 block">{tIsBool ? "Output Value" : "Write Value (%)"}</span>
                                             {tIsBool ? (
                                               <select value={t.write_value_boolean ?? "true"} onChange={(e) => updTarget({ write_value_boolean: e.target.value, write_value_pct: "" })} className={`${sel} w-full`}>
-                                                <option value="true">NO</option><option value="false">NC</option>
+                                                <option value="true">ON</option><option value="false">OFF</option>
                                               </select>
                                             ) : (
                                               <input type="number" min={0} max={100} placeholder="0 – 100"

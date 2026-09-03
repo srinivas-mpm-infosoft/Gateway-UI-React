@@ -321,8 +321,8 @@ export default function RegisterTable({
                           className={selectCls}
                           style={{ width: 80 }}
                         >
-                          <option value="true">NO</option>
-                          <option value="false">NC</option>
+                          <option value="true">ON</option>
+                          <option value="false">OFF</option>
                         </select>
                       ) : (
                         // Independent + FLOAT / INT / BIGINT : Min, Max, Write %
