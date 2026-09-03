@@ -142,16 +142,16 @@ export default function IOSettings({ role = "admin", isReadOnly, subTab = "gener
               >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {[
-                    // {
-                    //   name: "modbus",
-                    //   label: "Modbus RTU Protocol",
-                    //   checked: config.ioSettings?.settings?.modbus,
-                    // },
-                    // {
-                    //   name: "plc",
-                    //   label: "PLC",
-                    //   checked: config.ioSettings?.settings?.plc,
-                    // },
+                    {
+                      name: "modbus",
+                      label: "Modbus RTU Protocol",
+                      checked: config.ioSettings?.settings?.modbus,
+                    },
+                    {
+                      name: "plc",
+                      label: "PLC",
+                      checked: config.ioSettings?.settings?.plc,
+                    },
                     {
                       name: "scada",
                       label: "SCADA",

@@ -26,7 +26,8 @@ export default function GrafanaFrame() {
     >
       <iframe
         key={theme}
-        src={`http://localhost:3000/d/adws7bj/mixer-diagram?kiosk&theme=light`}
+        // src={`http://localhost:3000/d/adws7bj/mixer-diagram?kiosk&theme=light`}
+             src={`http://localhost:3000/d/cb8cbc70-2aae-48eb-8bca-bace3e192951/analog-acquisition-module`}
         onLoad={() => setLoading(false)}
         style={{
           width: "125%",            // compensate for scale
