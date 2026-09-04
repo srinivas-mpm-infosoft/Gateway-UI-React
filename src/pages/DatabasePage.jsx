@@ -121,7 +121,7 @@ export default function DatabasePage({ isReadOnly = false }) {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-6">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Database Configuration</h1>
-          <p className="text-slate-500 text-sm">Manage your local and cloud database connection strings.</p>
+          <p className="text-slate-500 text-sm">Manage your local and external database connection strings.</p>
         </div>
         <button
           onClick={saveDatabaseConfig}
@@ -147,7 +147,10 @@ export default function DatabasePage({ isReadOnly = false }) {
                   <div className={`p-2 rounded-lg ${isEnabled ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-200 text-slate-500'}`}>
                     {name === 'local' ? <Database className="h-5 w-5" /> : <Cloud className="h-5 w-5" />}
                   </div>
-                  <h3 className="font-bold text-slate-800 uppercase tracking-tight">{name} Database</h3>
+                  <h3 className="font-bold text-slate-800 uppercase tracking-tight">
+{name === 'cloud' ? 'External Database' : 'Local Database'}
+
+                  </h3>
                 </div>
 
                 {/* Toggle Switch */}

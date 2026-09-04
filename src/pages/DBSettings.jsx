@@ -66,7 +66,7 @@ export default function DBSettings({ prefix, db, role, onChange, isReadOnly = fa
               disabled={isReadOnly}
             />
           )}
-          Cloud DB
+          External DB
         </label>
 
         {/* {isPrivilegedRole ? (
