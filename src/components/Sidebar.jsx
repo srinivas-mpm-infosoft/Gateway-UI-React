@@ -4,7 +4,7 @@ import {
   Settings, Lock, LogOut,
   Settings2, Cpu, Network,
   ChevronDown, Volume2, BarChart3, FileText, Activity,
-  Users,
+  Users, CloudCog,
 } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
 
@@ -18,6 +18,7 @@ const NAV_ITEMS = [
   //{ id: "audio-alerts-group", icon: Volume2,    label: "Audio Alerts",    isAAGroup: true },
   { id: "Wifi/4G",            icon: Wifi,       label: "WiFi / 4G / Ethernet" },
   { id: "database",           icon: Database,   label: "Data Storage",    domId: "nav-database",       requiresAdmin: true },
+  { id: "file-cloud-sync",    icon: CloudCog,   label: "File Cloud Sync", requiresAdmin: true },
   // { id: "admin-settings",     icon: Settings,   label: "Admin Settings",  domId: "nav-admin-settings", requiresAdmin: true },
   { id: "user-management",    icon: Users,      label: "User Management", domId: "nav-user-mgmt",      requiresSuper: true },
   { id: "change-password",    icon: Lock,       label: "Change Password" },

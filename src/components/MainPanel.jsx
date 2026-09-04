@@ -110,6 +110,7 @@ import DatabasePage from "./../pages/DatabasePage";
 import AdminSettings from "./../pages/AdminSettings";
 import ChangePassword from "./../pages/ChangePassword";
 import UserManagement from "./../pages/UserManagement";
+import FileCloudSync from "./../pages/FileCloudSync";
 import { targetUrl } from "./../config";
 
 // Normalize legacy 3-role → 7-role for permission checks
@@ -142,6 +143,7 @@ const AA_SUB_TAB_MAP = {
 const KNOWN_PANELS = new Set([
   "Wifi/4G", "alarm", "file-to-db", "database",
   "admin-settings", "change-password", "user-management", "logout",
+  "file-cloud-sync",
 ]);
 
 export default function MainPanel({ panel, user }) {
@@ -183,6 +185,12 @@ export default function MainPanel({ panel, user }) {
         isAdmin
           ? <DatabasePage isReadOnly={isReadOnly} />
           : <div style={{ padding: 20, color: "#d32f2f" }}>Access denied: database view available for admin/superadmin.</div>
+      )}
+
+      {panel === "file-cloud-sync" && (
+        isAdmin
+          ? <FileCloudSync isReadOnly={isReadOnly} />
+          : <div style={{ padding: 20, color: "#d32f2f" }}>Access denied: file cloud sync available for admin/superadmin.</div>
       )}
 
       {panel === "admin-settings" && (
