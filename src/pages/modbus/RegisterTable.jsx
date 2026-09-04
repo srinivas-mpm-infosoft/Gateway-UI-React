@@ -42,8 +42,8 @@ export default function RegisterTable({
           <th className={thCls}>Name</th>
           <th className={thCls}>Start Addr</th>
           <th className={thCls}>Offset</th>
-          <th className={thCls}>Mode</th>
-          <th className={thCls}>Register Type</th>
+          {/* <th className={thCls}>Mode</th>
+          <th className={thCls}>Register Type</th> */}
           <th className={thCls}>Sensor Type</th>
           <th className={thCls}>Eng Symbol</th>
           <th className={thCls}>Elec. Range</th>
@@ -121,8 +121,8 @@ export default function RegisterTable({
                 />
               </td>
 
-              {/* Mode (Read / Write) */}
-              <td className={tdCls}>
+           
+              {/* <td className={tdCls}>
                 <select
                   value={r.mode ?? "read"}
                   disabled={isReadOnly}
@@ -138,7 +138,6 @@ export default function RegisterTable({
                 </select>
               </td>
 
-              {/* Register Type */}
               <td className={tdCls}>
                 <select
                   value={r.type ?? "Input Register"}
@@ -152,7 +151,7 @@ export default function RegisterTable({
                   <option>Holding Register</option>
                   <option>Input Register</option>
                 </select>
-              </td>
+              </td> */}
 
               {/* Sensor Type */}
               <td className={tdCls}>

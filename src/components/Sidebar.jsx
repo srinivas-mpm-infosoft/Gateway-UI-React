@@ -18,14 +18,14 @@ const NAV_ITEMS = [
   //{ id: "audio-alerts-group", icon: Volume2,    label: "Audio Alerts",    isAAGroup: true },
   { id: "Wifi/4G",            icon: Wifi,       label: "WiFi / 4G / Ethernet" },
   { id: "database",           icon: Database,   label: "Data Storage",    domId: "nav-database",       requiresAdmin: true },
-  { id: "admin-settings",     icon: Settings,   label: "Admin Settings",  domId: "nav-admin-settings", requiresAdmin: true },
+  // { id: "admin-settings",     icon: Settings,   label: "Admin Settings",  domId: "nav-admin-settings", requiresAdmin: true },
   { id: "user-management",    icon: Users,      label: "User Management", domId: "nav-user-mgmt",      requiresSuper: true },
   { id: "change-password",    icon: Lock,       label: "Change Password" },
   { id: "logout",             icon: LogOut,     label: "Logout" },
 ];
 
 const IO_SUB_ITEMS = [
-  { id: "io-general",    icon: Settings2, label: "General"         },
+  // { id: "io-general",    icon: Settings2, label: "General"         },
   { id: "io-modbus-rtu", icon: Cpu,       label: "Modbus RTU"      },
   // { id: "io-plc",        icon: Network,   label: "PLC"             },
   // { id: "io-scada",      icon: Network,   label: "SCADA PC"        },

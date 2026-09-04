@@ -822,7 +822,7 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
                     />
                     <span className="font-medium">Slave Enabled</span>
                   </label>
-                  <label className="flex items-center gap-2.5 text-sm text-slate-600 cursor-pointer">
+                  {/* <label className="flex items-center gap-2.5 text-sm text-slate-600 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={!!slaveObj.use_usb}
@@ -831,8 +831,8 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
                       className="h-4 w-4 rounded border-slate-300 accent-zinc-700"
                     />
                     <span className="font-medium">Use USB</span>
-                  </label>
-                  <label className="flex items-center gap-2.5 text-sm text-slate-600 cursor-pointer">
+                  </label> */}
+                  {/* <label className="flex items-center gap-2.5 text-sm text-slate-600 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={!!slaveObj.generate_random}
@@ -841,7 +841,7 @@ export default function ModbusRTU({ config, onSave, setConfig, role = "admin", i
                       className="h-4 w-4 rounded border-slate-300 accent-zinc-700"
                     />
                     <span className="font-medium">Generate Random</span>
-                  </label>
+                  </label> */}
                 </div>
               </div>
               <DBSettings

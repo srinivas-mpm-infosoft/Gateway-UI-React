@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function GrafanaFrame() {
-  const [theme, setTheme] = useState("dark");
-  const [loading, setLoading] = useState(false);
+  const [theme, setTheme] = useState("light");
+  const [loading, setLoading] = useState(true);
+  const containerRef = useRef(null);
 
   useEffect(() => {
     const handler = (event) => {
@@ -15,25 +16,43 @@ export default function GrafanaFrame() {
     return () => window.removeEventListener("message", handler);
   }, []);
 
-  // Use whatever host the React app was loaded from
+  // Request true browser fullscreen (needs a user gesture the first time
+  // in most browsers — see note below)
+  const enterFullscreen = () => {
+    const el = containerRef.current;
+    if (el && !document.fullscreenElement) {
+      el.requestFullscreen?.().catch(() => {});
+    }
+  };
+
   const grafanaHost = window.location.hostname;
   const grafanaPort = "3000";
-  const grafanaProtocol = window.location.protocol; // match http/https to avoid mixed-content
-
+  const grafanaProtocol = window.location.protocol;
   const grafanaBaseUrl = `${grafanaProtocol}//${grafanaHost}:${grafanaPort}`;
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "#000" }}>
+    <div
+      ref={containerRef}
+      onClick={enterFullscreen}
+      style={{
+        position: "fixed",
+        inset: 0,
+        width: "100vw",
+        height: "100vh",
+        background: "#000",
+        overflow: "hidden",
+      }}
+    >
       <iframe
         key={theme}
-        src={`${grafanaBaseUrl}/d/adzrhsk/analog-readings?kiosk&theme=${theme}`}
+        title="grafana-dashboard"
+        src={`${grafanaBaseUrl}/d/adrkjjk/sensor-monitoring-dashboard?kiosk&theme=${theme}`}
         onLoad={() => setLoading(false)}
         style={{
-          width: "125%",
-          height: "120vh",
+          width: "100%",
+          height: "100%",
           border: "none",
-          transform: "scale(0.8)",
-          transformOrigin: "top left",
+          display: "block",
           opacity: loading ? 0 : 1,
           transition: "opacity 0.2s ease",
         }}
